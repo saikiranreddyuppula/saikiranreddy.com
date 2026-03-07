@@ -872,7 +872,7 @@ const MountainSection: React.FC = () => {
 
         .journey-markers {
           position: absolute;
-          right: 6rem;
+          right: 10rem;
           top: 50%;
           transform: translateY(-50%);
           display: flex;
