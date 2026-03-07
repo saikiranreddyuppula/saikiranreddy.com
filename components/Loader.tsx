@@ -78,6 +78,8 @@ const Loader = ({
       }, 100);
     }
 
+    let handleResize: (() => void) | undefined;
+
     try {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000000);
@@ -223,6 +225,19 @@ const Loader = ({
       };
 
       animationRef.current = requestAnimationFrame(animate);
+
+      handleResize = () => {
+        if (cameraRef.current && rendererRef.current) {
+          cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+          if (!zoomState.current.animating) {
+            initialZ = calcCameraZ();
+            cameraRef.current.position.z = initialZ;
+          }
+        }
+      };
+      window.addEventListener("resize", handleResize);
     } catch (e) {
       // Some automated/headless browsers cannot create a WebGL context.
       // In that case, skip the intro instead of surfacing a runtime overlay.
@@ -232,21 +247,8 @@ const Loader = ({
       }
     }
 
-    const handleResize = () => {
-      if (cameraRef.current && rendererRef.current) {
-        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
-        cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
-        if (!zoomState.current.animating) {
-          initialZ = calcCameraZ();
-          cameraRef.current.position.z = initialZ;
-        }
-      }
-    };
-    window.addEventListener("resize", handleResize);
-
     return () => {
-      window.removeEventListener("resize", handleResize);
+      if (handleResize) window.removeEventListener("resize", handleResize);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
