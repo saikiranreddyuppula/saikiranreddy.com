@@ -83,13 +83,13 @@ const Loader = ({
       scene.background = new THREE.Color(0x000000);
       sceneRef.current = scene;
 
+      const baseFov = 75;
       const camera = new THREE.PerspectiveCamera(
-        75,
+        baseFov,
         window.innerWidth / window.innerHeight,
         0.1,
         1000
       );
-      camera.position.z = 50;
       cameraRef.current = camera;
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -102,10 +102,20 @@ const Loader = ({
         mountRef.current.appendChild(renderer.domElement);
       }
 
-      // Letter Creation - pure white
       const letterSpacing = 3.2;
       const totalWidth = (text.length - 1) * letterSpacing;
       const startX = -totalWidth / 2;
+
+      const textWidth = totalWidth + 4.5;
+      const calcCameraZ = () => {
+        const aspect = window.innerWidth / window.innerHeight;
+        const vertHalfFov = (baseFov / 2) * Math.PI / 180;
+        const horzHalfFov = Math.atan(Math.tan(vertHalfFov) * aspect);
+        return Math.max(50, (textWidth / 2 + 2) / Math.tan(horzHalfFov));
+      };
+
+      let initialZ = calcCameraZ();
+      camera.position.z = initialZ;
 
       lettersRef.current = [];
 
@@ -161,8 +171,8 @@ const Loader = ({
           if (lettersRef.current[0]) {
             const firstLetter = lettersRef.current[0];
             camera.position.x = firstLetter.mesh.position.x * easedProgress;
-            camera.position.z = 50 - 49.9 * easedProgress;
-            camera.fov = 75 - 74 * easedProgress;
+            camera.position.z = initialZ - (initialZ - 0.1) * easedProgress;
+            camera.fov = baseFov - (baseFov - 1) * easedProgress;
             camera.updateProjectionMatrix();
           }
 
@@ -227,6 +237,10 @@ const Loader = ({
         cameraRef.current.aspect = window.innerWidth / window.innerHeight;
         cameraRef.current.updateProjectionMatrix();
         rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+        if (!zoomState.current.animating) {
+          initialZ = calcCameraZ();
+          cameraRef.current.position.z = initialZ;
+        }
       }
     };
     window.addEventListener("resize", handleResize);
