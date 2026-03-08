@@ -351,6 +351,10 @@ const Hero = () => {
         }
 
         @media (max-width: 768px) {
+          .hero-text {
+            bottom: 16%;
+          }
+
           .hero-tagline {
             font-size: clamp(1.2rem, 5vw, 1.6rem);
           }

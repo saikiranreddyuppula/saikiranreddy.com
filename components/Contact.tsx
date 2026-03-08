@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
+import ChicagoSkyline from "./ChicagoSkyline";
 
 const Contact = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -130,6 +131,9 @@ const Contact = () => {
           </div>
         </footer>
       </div>
+
+      {/* Chicago Skyline Background */}
+      <ChicagoSkyline />
 
       <style jsx>{`
         .contact-section {
