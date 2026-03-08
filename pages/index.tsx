@@ -76,15 +76,17 @@ const Home: NextPage = () => {
       {/* Main Content */}
       <CustomCursor />
 
+      {/* Transition overlay — subtle dark fade instead of white flash */}
       <div
         className="hero-flash"
         style={{
           position: "fixed",
           inset: 0,
-          background: "#fff",
+          background: "#000",
           opacity: 0,
           zIndex: 50,
           pointerEvents: "none",
+          visibility: "hidden",
         }}
       />
       <div className={`app-content ${loading ? "app-content--hidden" : ""}`}>
