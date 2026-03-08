@@ -241,6 +241,7 @@ const Hero = () => {
           align-items: center;
           gap: 0.2rem;
           opacity: 0;
+          margin-bottom: 1.5rem;
         }
 
         .hero-scroll-arrow {
