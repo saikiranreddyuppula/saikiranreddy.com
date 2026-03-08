@@ -198,8 +198,6 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     overflow: hidden;
                     cursor: pointer;
                     will-change: transform, opacity;
-                    transform-style: preserve-3d;
-                    perspective: 800px;
                 }
 
                 .card-bg {
@@ -398,36 +396,7 @@ const Industries = () => {
                 }
             });
 
-            // --- Card 3D entrance animations (staggered rotateY + translateZ + opacity) ---
             const cards = horizontal.querySelectorAll('.industry-card');
-            cards.forEach((card, i) => {
-                // Stagger by offsetting start/end per card
-                const staggerOffset = i * 0.04; // each card starts slightly later
-                const revealStart = scrollWidth * staggerOffset;
-                const revealEnd = scrollWidth * (0.25 + staggerOffset);
-
-                // Set initial state for 3D reveal
-                gsap.set(card, {
-                    rotateY: 25,
-                    z: -100,
-                    opacity: 0,
-                    transformOrigin: 'center center',
-                });
-
-                gsap.to(card, {
-                    rotateY: 0,
-                    z: 0,
-                    opacity: 1,
-                    ease: 'power3.out',
-                    scrollTrigger: {
-                        trigger: container,
-                        start: () => `top+=${revealStart} top`,
-                        end: () => `top+=${revealEnd} top`,
-                        scrub: 1,
-                        invalidateOnRefresh: true,
-                    },
-                });
-            });
 
             // --- Parallax depth within cards ---
             // Background numbers and content items move at different rates
