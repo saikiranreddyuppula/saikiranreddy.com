@@ -233,6 +233,7 @@ const About = () => {
         <div className="about-divider" />
 
         <div className="about-stats-row">
+          <div className="about-light-motif" aria-hidden="true" />
           {stats.map((stat, i) => (
             <div key={i} className="about-stat">
               <div className="about-stat-value">
@@ -366,6 +367,30 @@ const About = () => {
           gap: clamp(3rem, 8vw, 8rem);
           margin-bottom: 3rem;
           will-change: transform;
+          position: relative;
+        }
+
+        .about-light-motif {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 500px;
+          height: 300px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(255, 250, 240, 0.06) 0%,
+            rgba(255, 255, 255, 0.02) 40%,
+            transparent 70%
+          );
+          pointer-events: none;
+          animation: aboutGlowPulse 5s ease-in-out infinite;
+          z-index: 0;
+        }
+
+        @keyframes aboutGlowPulse {
+          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
         }
 
         .about-stat {

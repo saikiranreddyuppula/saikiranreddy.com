@@ -283,20 +283,23 @@ const Contact = () => {
 
         {/* Main Content */}
         <div className="contact-main">
-          <h2 className="contact-headline">
-            {HEADLINE_WORDS.map((word, i) => (
-              <span key={i} className="headline-word">
-                <span
-                  className={`headline-word-inner ${
-                    word.accent ? "text-accent" : ""
-                  }`}
-                >
-                  {word.text}
-                  {word.accent ? "." : ""}
+          <div className="contact-headline-wrapper">
+            <div className="contact-light-motif" aria-hidden="true" />
+            <h2 className="contact-headline">
+              {HEADLINE_WORDS.map((word, i) => (
+                <span key={i} className="headline-word">
+                  <span
+                    className={`headline-word-inner ${
+                      word.accent ? "text-accent" : ""
+                    }`}
+                  >
+                    {word.text}
+                    {word.accent ? "." : ""}
+                  </span>
                 </span>
-              </span>
-            ))}
-          </h2>
+              ))}
+            </h2>
+          </div>
 
           <div className="contact-line"></div>
 
@@ -427,8 +430,38 @@ const Contact = () => {
           padding: 4rem 0;
         }
 
+        /* Headline wrapper with light motif */
+        .contact-headline-wrapper {
+          position: relative;
+        }
+
+        .contact-light-motif {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 600px;
+          height: 400px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(255, 250, 240, 0.07) 0%,
+            rgba(255, 255, 255, 0.02) 40%,
+            transparent 70%
+          );
+          pointer-events: none;
+          animation: contactGlowPulse 6s ease-in-out infinite;
+          z-index: 0;
+        }
+
+        @keyframes contactGlowPulse {
+          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+        }
+
         /* Headline with word-by-word reveal */
         .contact-headline {
+          position: relative;
+          z-index: 1;
           font-family: var(--font-serif);
           font-size: clamp(3rem, 8vw, 7rem);
           font-weight: 300;

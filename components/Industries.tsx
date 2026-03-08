@@ -168,6 +168,7 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
         >
             <div className="card-bg"></div>
             <div ref={glowRef} className="card-glow"></div>
+            <div className="card-light-ray" aria-hidden="true"></div>
             <div ref={borderRef} className="card-border"></div>
 
             <div ref={contentRef} className="card-content">
@@ -231,6 +232,28 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     );
                     opacity: 0;
                     pointer-events: none;
+                }
+
+                .card-light-ray {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 60%;
+                    height: 120px;
+                    background: linear-gradient(
+                        180deg,
+                        rgba(255, 250, 240, 0.06) 0%,
+                        transparent 100%
+                    );
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.6s ease;
+                    z-index: 1;
+                }
+
+                .is-active .card-light-ray {
+                    opacity: 1;
                 }
 
                 .card-border {
