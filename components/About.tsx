@@ -37,6 +37,7 @@ const About = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const scrollProgress = useRef(0);
+  const floatingAnimsRef = useRef<gsap.core.Tween[]>([]);
 
   useEffect(() => {
     if (!containerRef.current || !headlineRef.current) return;
@@ -123,16 +124,19 @@ const About = () => {
         );
       });
 
+      // Count-up animation using proxy objects for reliable number interpolation
       statNumbers.forEach((numEl, i) => {
         const targetValue = Number(numEl.dataset.value);
-        tl.fromTo(
-          numEl,
-          { textContent: "0" },
+        const proxy = { val: 0 };
+        tl.to(
+          proxy,
           {
-            textContent: String(targetValue),
-            snap: { textContent: 1 },
+            val: targetValue,
             duration: 0.8,
             ease: "power2.out",
+            onUpdate: () => {
+              numEl.textContent = String(Math.round(proxy.val));
+            },
           },
           1.1 + i * 0.15,
         );
@@ -146,28 +150,59 @@ const About = () => {
         1.5,
       );
 
+      // Staggered entrance for tags with rotation/scale variance and glow
       tagEls.forEach((tag, i) => {
+        // Randomize initial rotation and scale for organic feel
+        const initRotation = -8 + Math.random() * 16;
+        const initScale = 0.6 + Math.random() * 0.3;
+
         tl.fromTo(
           tag,
           {
-            y: 30,
+            y: 50,
+            x: -20 + Math.random() * 40,
             opacity: 0,
-            clipPath: "inset(100% 0% 0% 0%)",
+            scale: initScale,
+            rotation: initRotation,
+            filter: "blur(6px)",
           },
           {
             y: 0,
+            x: 0,
             opacity: 1,
-            clipPath: "inset(0% 0% 0% 0%)",
-            duration: 0.4,
-            ease: "power3.out",
+            scale: 1,
+            rotation: 0,
+            filter: "blur(0px)",
+            duration: 0.6,
+            ease: "back.out(1.7)",
+            onComplete: () => {
+              // Start idle floating animation after entrance
+              const floatY = 2 + Math.random() * 3;
+              const floatRotation = 0.5 + Math.random() * 1;
+              const floatDuration = 2.5 + Math.random() * 2;
+              const delay = Math.random() * 2;
+
+              const floatAnim = gsap.to(tag, {
+                y: -floatY,
+                rotation: floatRotation,
+                duration: floatDuration,
+                ease: "sine.inOut",
+                repeat: -1,
+                yoyo: true,
+                delay,
+              });
+              floatingAnimsRef.current.push(floatAnim);
+            },
           },
-          1.7 + i * 0.1,
+          1.6 + i * 0.12,
         );
       });
     }, containerRef);
 
     return () => {
       window.removeEventListener("revealAbout", handleReveal);
+      floatingAnimsRef.current.forEach((anim) => anim.kill());
+      floatingAnimsRef.current = [];
       ctx.revert();
     };
   }, []);
@@ -406,15 +441,20 @@ const About = () => {
           padding: 0.6rem 1.25rem;
           border: 1px solid rgba(255, 255, 255, 0.15);
           color: rgba(255, 255, 255, 0.5);
-          transition: all 0.3s ease;
+          transition: color 0.3s ease, border-color 0.3s ease,
+            background 0.3s ease, box-shadow 0.4s ease;
           opacity: 0;
-          will-change: transform, opacity, clip-path;
+          will-change: transform, opacity, filter;
+          backdrop-filter: blur(4px);
+          background: rgba(255, 255, 255, 0.02);
         }
 
         .about-tag:hover {
-          background: #fff;
+          background: rgba(255, 255, 255, 0.95);
           color: #000;
-          border-color: #fff;
+          border-color: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.15),
+            0 0 40px rgba(255, 255, 255, 0.05);
         }
 
         @media (max-width: 1024px) {
