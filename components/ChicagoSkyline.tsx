@@ -1,6 +1,20 @@
-import React from "react";
+import React, { useEffect, useRef, useMemo } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+interface WindowLight {
+  left: string;
+  bottom: string;
+  delay: number;
+  duration: number;
+}
 
 const ChicagoSkyline: React.FC = () => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const lightsRef = useRef<HTMLDivElement>(null);
+
   const path = `M2558.306,432.849c-1.313-0.187-2.813-0.88-3.91-0.478c-6.897,2.53-9.018-3.717-8.671-6.956
 	c0.591-5.515-0.589-10.939,0.317-16.294c0.316-1.867,0.161-3.643-1.399-3.749c-7.012-0.475-13.874-3.731-20.837-2.393
 	c-7.923,1.523-9.66,1.625-14.463-3.346c-0.706-0.731-2.039-0.811-2.911-1.433c-5.142-3.667-9.222,2.752-14.202,1.39
@@ -91,8 +105,109 @@ const ChicagoSkyline: React.FC = () => {
 	c0,520.163-2.783,481.064,5.235,481.063c2705.628-0.449,2552.727,3.118,2552.719-5.545
 	C2558.281,713.447,2558.306,573.148,2558.306,432.849z`;
 
+  // Generate window light positions as percentage-based for HTML overlay
+  const windowLights = useMemo<WindowLight[]>(() => {
+    const lights: WindowLight[] = [];
+    // Building regions as percentage of skyline width/height
+    // The skyline occupies the bottom portion: taller buildings reach ~30% from bottom, shorter ~15%
+    const buildingRegions = [
+      { leftMin: 3, leftMax: 12, bottomMin: 10, bottomMax: 45 },
+      { leftMin: 12, leftMax: 20, bottomMin: 8, bottomMax: 38 },
+      { leftMin: 20, leftMax: 28, bottomMin: 10, bottomMax: 50 },
+      { leftMin: 28, leftMax: 36, bottomMin: 12, bottomMax: 65 },
+      { leftMin: 36, leftMax: 44, bottomMin: 10, bottomMax: 55 },
+      { leftMin: 44, leftMax: 52, bottomMin: 8, bottomMax: 48 },
+      { leftMin: 52, leftMax: 60, bottomMin: 10, bottomMax: 45 },
+      { leftMin: 60, leftMax: 68, bottomMin: 12, bottomMax: 52 },
+      { leftMin: 68, leftMax: 76, bottomMin: 10, bottomMax: 48 },
+      { leftMin: 76, leftMax: 84, bottomMin: 8, bottomMax: 42 },
+      { leftMin: 84, leftMax: 92, bottomMin: 10, bottomMax: 58 },
+      { leftMin: 92, leftMax: 98, bottomMin: 8, bottomMax: 38 },
+    ];
+
+    let seed = 42;
+    const pseudoRandom = () => {
+      seed = (seed * 16807 + 0) % 2147483647;
+      return seed / 2147483647;
+    };
+
+    for (const region of buildingRegions) {
+      const count = 3 + Math.floor(pseudoRandom() * 4);
+      for (let i = 0; i < count; i++) {
+        lights.push({
+          left: `${region.leftMin + pseudoRandom() * (region.leftMax - region.leftMin)}%`,
+          bottom: `${region.bottomMin + pseudoRandom() * (region.bottomMax - region.bottomMin)}%`,
+          delay: pseudoRandom() * 5,
+          duration: 1.5 + pseudoRandom() * 3,
+        });
+      }
+    }
+    return lights;
+  }, []);
+
+  // Parallax scroll effect
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+
+    const svgEl = wrapperRef.current.querySelector("svg");
+    if (!svgEl) return;
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        svgEl,
+        { y: 40 },
+        {
+          y: -20,
+          ease: "none",
+          scrollTrigger: {
+            trigger: wrapperRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          },
+        }
+      );
+    }, wrapperRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  // Twinkling lights animation via refs
+  useEffect(() => {
+    if (!lightsRef.current) return;
+
+    const lightEls = lightsRef.current.children;
+    if (lightEls.length === 0) return;
+
+    const tweens: gsap.core.Tween[] = [];
+
+    for (let i = 0; i < lightEls.length; i++) {
+      const el = lightEls[i] as HTMLElement;
+      const data = windowLights[i];
+      if (!data) continue;
+
+      const tween = gsap.fromTo(
+        el,
+        { opacity: 0 },
+        {
+          opacity: () => 0.3 + Math.random() * 0.7,
+          duration: data.duration,
+          delay: data.delay,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }
+      );
+      tweens.push(tween);
+    }
+
+    return () => {
+      tweens.forEach((t) => t.kill());
+    };
+  }, [windowLights]);
+
   return (
-    <div className="chicago-skyline-wrapper">
+    <div className="chicago-skyline-wrapper" ref={wrapperRef}>
       <svg
         viewBox="0 0 2560 859.96"
         preserveAspectRatio="xMidYMax meet"
@@ -100,84 +215,82 @@ const ChicagoSkyline: React.FC = () => {
         className="chicago-skyline-svg"
       >
         <defs>
-          {/* Primary brushed-steel vertical gradient */}
           <linearGradient id="metal-v" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="6%"   stopColor="#d0d0d0" />
-            <stop offset="14%"  stopColor="#f2f2f2" />
-            <stop offset="22%"  stopColor="#a8a8a8" />
-            <stop offset="32%"  stopColor="#e0e0e0" />
-            <stop offset="42%"  stopColor="#888888" />
-            <stop offset="52%"  stopColor="#c4c4c4" />
-            <stop offset="62%"  stopColor="#606060" />
-            <stop offset="72%"  stopColor="#9a9a9a" />
-            <stop offset="82%"  stopColor="#404040" />
-            <stop offset="92%"  stopColor="#606060" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="6%" stopColor="#d0d0d0" />
+            <stop offset="14%" stopColor="#f2f2f2" />
+            <stop offset="22%" stopColor="#a8a8a8" />
+            <stop offset="32%" stopColor="#e0e0e0" />
+            <stop offset="42%" stopColor="#888888" />
+            <stop offset="52%" stopColor="#c4c4c4" />
+            <stop offset="62%" stopColor="#606060" />
+            <stop offset="72%" stopColor="#9a9a9a" />
+            <stop offset="82%" stopColor="#404040" />
+            <stop offset="92%" stopColor="#606060" />
             <stop offset="100%" stopColor="#1a1a1a" />
           </linearGradient>
 
-          {/* Horizontal brushed-metal sheen — alternating highlight bands */}
           <linearGradient id="metal-h" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="8%"   stopColor="rgba(255,255,255,0.18)" />
-            <stop offset="18%"  stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="30%"  stopColor="rgba(255,255,255,0.22)" />
-            <stop offset="42%"  stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="55%"  stopColor="rgba(255,255,255,0.26)" />
-            <stop offset="67%"  stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="78%"  stopColor="rgba(255,255,255,0.20)" />
-            <stop offset="90%"  stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="0%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="8%" stopColor="rgba(255,255,255,0.18)" />
+            <stop offset="18%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="30%" stopColor="rgba(255,255,255,0.22)" />
+            <stop offset="42%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="55%" stopColor="rgba(255,255,255,0.26)" />
+            <stop offset="67%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="78%" stopColor="rgba(255,255,255,0.20)" />
+            <stop offset="90%" stopColor="rgba(255,255,255,0.00)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
           </linearGradient>
 
-          {/* Diagonal specular highlight — the "glint" */}
           <linearGradient id="metal-glint" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="30%"  stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="45%"  stopColor="rgba(255,255,255,0.30)" />
-            <stop offset="55%"  stopColor="rgba(255,255,255,0.08)" />
-            <stop offset="70%"  stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="0%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="30%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="45%" stopColor="rgba(255,255,255,0.30)" />
+            <stop offset="55%" stopColor="rgba(255,255,255,0.08)" />
+            <stop offset="70%" stopColor="rgba(255,255,255,0.00)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0.00)" />
           </linearGradient>
-
-          {/* Combine vertical + horizontal via a multiply pattern filter */}
-          <filter id="metal-filter" x="0%" y="0%" width="100%" height="100%">
-            <feColorMatrix
-              type="matrix"
-              values="1.1  0    0    0   -0.05
-                      1.1  0    0    0   -0.05
-                      1.1  0    0    0   -0.05
-                      0    0    0    1    0"
-            />
-            <feComponentTransfer>
-              <feFuncR type="gamma" amplitude="1" exponent="0.85" offset="0" />
-              <feFuncG type="gamma" amplitude="1" exponent="0.85" offset="0" />
-              <feFuncB type="gamma" amplitude="1" exponent="0.85" offset="0" />
-            </feComponentTransfer>
-          </filter>
 
           <clipPath id="skyline-clip">
             <path d={path} />
           </clipPath>
         </defs>
 
-        {/* Base fill — deep brushed vertical gradient */}
         <path d={path} fill="url(#metal-v)" />
 
-        {/* Horizontal sheen bands on top */}
         <rect
-          x="0" y="0" width="2560" height="859.96"
+          x="0"
+          y="0"
+          width="2560"
+          height="859.96"
           fill="url(#metal-h)"
           clipPath="url(#skyline-clip)"
         />
 
-        {/* Diagonal glint */}
         <rect
-          x="0" y="0" width="2560" height="859.96"
+          x="0"
+          y="0"
+          width="2560"
+          height="859.96"
           fill="url(#metal-glint)"
           clipPath="url(#skyline-clip)"
         />
       </svg>
+
+      {/* Window lights as HTML elements overlaying the SVG */}
+      <div className="window-lights-layer" ref={lightsRef}>
+        {windowLights.map((light, i) => (
+          <div
+            key={i}
+            className="window-light"
+            style={{
+              left: light.left,
+              bottom: light.bottom,
+            }}
+          />
+        ))}
+      </div>
 
       <style jsx>{`
         .chicago-skyline-wrapper {
@@ -195,13 +308,30 @@ const ChicagoSkyline: React.FC = () => {
           display: block;
           width: 100%;
           height: auto;
-          opacity: 0.28;
+          opacity: 0.35;
           filter: contrast(1.1) brightness(1.05);
+          will-change: transform;
+        }
+
+        .window-lights-layer {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .window-light {
+          position: absolute;
+          width: 3px;
+          height: 2px;
+          background: #ffeebb;
+          border-radius: 0.5px;
+          box-shadow: 0 0 4px 1px rgba(255, 238, 187, 0.5);
+          opacity: 0;
         }
 
         @media (max-width: 768px) {
           .chicago-skyline-svg {
-            opacity: 0.18;
+            opacity: 0.22;
           }
         }
       `}</style>
