@@ -1,8 +1,11 @@
 import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+import dynamic from "next/dynamic";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const AboutScene = dynamic(() => import("./AboutScene"), { ssr: false });
 
 const headlineWords = [
   { text: "I", accent: false },
@@ -33,9 +36,17 @@ const tags = [
 const About = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
+  const scrollProgress = useRef(0);
 
   useEffect(() => {
     if (!containerRef.current || !headlineRef.current) return;
+
+    const tl = gsap.timeline({ paused: true });
+    const handleReveal = () => {
+      containerRef.current!.style.visibility = "visible";
+      tl.restart();
+    };
+    window.addEventListener("revealAbout", handleReveal);
 
     const ctx = gsap.context(() => {
       const words = gsap.utils.toArray<HTMLElement>(".about-word");
@@ -46,28 +57,21 @@ const About = () => {
       const tagEls = gsap.utils.toArray<HTMLElement>(".about-tag");
       const sectionLabel = containerRef.current!.querySelector(".about-label");
 
-      // Master timeline bound to a pinned ScrollTrigger
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top top",
-          end: "+=250%",
-          pin: true,
-          scrub: 0.6,
-          anticipatePin: 1,
-        },
-      });
+      // Fallback: if user lands mid-page (e.g. page refresh with scroll restored)
+      if (window.scrollY > window.innerHeight * 0.5 && tl.progress() === 0) {
+        containerRef.current!.style.visibility = "visible";
+        tl.play();
+      }
 
-      // === PHASE 1: Headline word reveal (0 to 0.25) ===
+      // === PHASE 1: Label + headline words ===
       tl.fromTo(
         sectionLabel,
         { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.03, ease: "power2.out" },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" },
         0,
       );
 
       words.forEach((word, i) => {
-        const startPos = (i / words.length) * 0.2;
         tl.fromTo(
           word,
           {
@@ -85,19 +89,19 @@ const About = () => {
             rotateZ: 0,
             clipPath: "inset(0% 0% 0% 0%)",
             filter: "blur(0px)",
-            duration: 0.06,
+            duration: 0.4,
             ease: "power3.out",
           },
-          startPos,
+          0.1 + i * 0.08,
         );
       });
 
-      // === PHASE 2: Line draw + stats (0.25 to 0.50) ===
+      // === PHASE 2: Divider + stats ===
       tl.fromTo(
         dividerLine,
         { scaleX: 0 },
-        { scaleX: 1, duration: 0.05, ease: "power2.inOut" },
-        0.25,
+        { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
+        0.8,
       );
 
       statEls.forEach((stat, i) => {
@@ -112,10 +116,10 @@ const About = () => {
             scale: 1,
             opacity: 1,
             filter: "blur(0px)",
-            duration: 0.06,
+            duration: 0.5,
             ease: "back.out(1.4)",
           },
-          0.3 + i * 0.04,
+          1.0 + i * 0.15,
         );
       });
 
@@ -127,19 +131,19 @@ const About = () => {
           {
             textContent: String(targetValue),
             snap: { textContent: 1 },
-            duration: 0.08,
+            duration: 0.8,
             ease: "power2.out",
           },
-          0.32 + i * 0.04,
+          1.1 + i * 0.15,
         );
       });
 
-      // === PHASE 3: Tagline + tags (0.50 to 0.75) ===
+      // === PHASE 3: Tagline + tags ===
       tl.fromTo(
         tagline,
         { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.06, ease: "power3.out" },
-        0.5,
+        { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+        1.5,
       );
 
       tagEls.forEach((tag, i) => {
@@ -154,30 +158,24 @@ const About = () => {
             y: 0,
             opacity: 1,
             clipPath: "inset(0% 0% 0% 0%)",
-            duration: 0.04,
+            duration: 0.4,
             ease: "power3.out",
           },
-          0.55 + i * 0.025,
+          1.7 + i * 0.1,
         );
       });
-
-      // === PHASE 4: Parallax drift out (0.75 to 1.0) ===
-      tl.to(
-        headlineRef.current,
-        { y: -30, ease: "none", duration: 0.25 },
-        0.75,
-      );
-
-      tl.to(".about-stats-row", { y: -15, ease: "none", duration: 0.25 }, 0.75);
-
-      tl.to(".about-bottom", { y: -8, ease: "none", duration: 0.25 }, 0.75);
     }, containerRef);
 
-    return () => ctx.revert();
+    return () => {
+      window.removeEventListener("revealAbout", handleReveal);
+      ctx.revert();
+    };
   }, []);
 
   return (
-    <section ref={containerRef} id="about" className="about-section">
+    <section ref={containerRef} id="about" className="about-section" style={{ visibility: "hidden" }}>
+      <AboutScene scrollProgress={scrollProgress} />
+
       <div className="about-label">
         <span className="label-index">01</span>
         <span className="label-dash">&mdash;</span>
@@ -270,6 +268,8 @@ const About = () => {
         }
 
         .about-content {
+          position: relative;
+          z-index: 1;
           height: 100%;
           display: flex;
           flex-direction: column;

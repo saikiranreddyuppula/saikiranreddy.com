@@ -74,15 +74,16 @@ const Hero = () => {
       scrollTrigger: {
         trigger: containerRef.current,
         start: "top top",
-        end: "+=300%",
+        end: "+=100%",
         pin: true,
+        pinSpacing: false,
         scrub: 0.3,
         onUpdate: (self) => {
           scrollProgress.current = self.progress;
           if (flashEl && flashControlActive.current) {
             const flashOpacity = Math.min(
               1,
-              Math.max(0, (self.progress - 0.3) / 0.35),
+              Math.max(0, (self.progress - 0.4) / 0.3),
             );
             flashEl.style.opacity = String(flashOpacity);
           }
@@ -101,16 +102,22 @@ const Hero = () => {
           if (containerRef.current) {
             containerRef.current.style.visibility = "hidden";
           }
-          if (lenis) {
-            lenis.stop();
-            lenis.scrollTo("#about", { immediate: true });
+
+          // Scroll to about — native fallback ensures it works even if Lenis is stopped
+          const aboutEl = document.getElementById("about");
+          if (aboutEl) {
+            window.scrollTo({ top: aboutEl.offsetTop, behavior: "instant" as ScrollBehavior });
           }
+          if (lenis) lenis.stop();
 
           flashFadeRef.current = gsap.to(flashEl, {
             opacity: 0,
-            duration: 0.8,
-            delay: 0.25,
+            duration: 0.4,
+            delay: 0.1,
             ease: "power2.inOut",
+            onStart: () => {
+              window.dispatchEvent(new Event("revealAbout"));
+            },
             onComplete: () => {
               if (flashEl) flashEl.style.visibility = "hidden";
               if (lenis) lenis.start();
@@ -128,6 +135,9 @@ const Hero = () => {
           if (flashEl) {
             flashEl.style.visibility = "visible";
           }
+          // Hide about section so it doesn't leak through on next scroll
+          const aboutEl = document.getElementById("about");
+          if (aboutEl) aboutEl.style.visibility = "hidden";
         },
       },
     });
@@ -206,6 +216,7 @@ const Hero = () => {
           position: relative;
           background: #000;
           overflow: hidden;
+          z-index: 3;
         }
 
         /* Hero Text */
