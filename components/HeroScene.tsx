@@ -23,7 +23,7 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
         1.5;
 
       d1[i * 4 + 0] = angle;
-      d1[i * 4 + 1] = Math.pow(Math.random(), 0.97) * 10.0 + 2.0;
+      d1[i * 4 + 1] = Math.pow(Math.random(), 0.97) * 5.0 + 1.5;
       d1[i * 4 + 2] = Math.random() * Math.PI * 2;
       d1[i * 4 + 3] = Math.random() * 0.8 + 0.1;
 
@@ -96,10 +96,12 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
         float normalizedY = pos.y + 0.5;
         float worldZ = mix(uThreadOrigin, uThreadLengthEnd, normalizedY);
         
-        float taper = smoothstep(uThreadOrigin, -5.0, worldZ);
-        
-        float wave1 = sin(worldZ * 0.1 - uTime * 0.3 + phase) * 1.5 * taper;
-        float wave2 = cos(worldZ * 0.15 - uTime * 0.2 + phase * 2.0) * 1.5 * taper;
+        float rawTaper = smoothstep(uThreadOrigin, -5.0, worldZ);
+        float taper = pow(rawTaper, 1.5);
+
+        float waveTaper = taper * taper;
+        float wave1 = sin(worldZ * 0.1 - uTime * 0.3 + phase) * 1.5 * waveTaper;
+        float wave2 = cos(worldZ * 0.15 - uTime * 0.2 + phase * 2.0) * 1.5 * waveTaper;
         
         float currentRadius = radius * taper;
         float xOffset = cos(angle) * currentRadius + wave1;
@@ -200,9 +202,8 @@ const BackgroundWeb = () => {
             
             for(float i = 0.0; i < 35.0; i++) {
               float ang = hash11(i * 1.34) * 3.14159;
-              float off = (hash11(i * 2.71) - 0.5) * 3.0;
               vec2 n = vec2(cos(ang), sin(ang));
-              float d = abs(dot(uv, n) - off);
+              float d = abs(dot(uv, n));
               
               float thick = mix(0.0005, 0.003, hash11(i * 3.11));
               

@@ -269,6 +269,7 @@ const Contact = () => {
   return (
     <section
       ref={sectionRef}
+      id="contact"
       className={`contact-section ${isVisible ? "is-visible" : ""}`}
     >
       <div className="contact-container">

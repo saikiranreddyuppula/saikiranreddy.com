@@ -241,7 +241,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section ref={containerRef} className="hero">
+    <section ref={containerRef} id="hero" className="hero">
       <HeroScene scrollProgress={scrollProgress} />
 
       <div className="hero-text">

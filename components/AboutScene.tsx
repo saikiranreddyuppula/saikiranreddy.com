@@ -1,230 +1,143 @@
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 interface ScrollRef {
   scrollProgress?: React.MutableRefObject<number>;
 }
 
-/* ── Ambient particle dust ────────────────────────────── */
-const Particles = ({ scrollProgress }: ScrollRef) => {
+/* ── Neural Mesh — displaced wireframe icosahedron ───── */
+const NeuralMesh = ({ scrollProgress }: ScrollRef) => {
+  const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const count = 180;
 
   const geometry = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    const phases = new Float32Array(count);
-
-    for (let i = 0; i < count; i++) {
-      pos[i * 3 + 0] = (Math.random() - 0.5) * 40;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 28;
-      pos[i * 3 + 2] = Math.random() * -20;
-      sizes[i] = Math.random() * 2.5 + 0.5;
-      phases[i] = Math.random() * Math.PI * 2;
-    }
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
-    geo.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
-    return geo;
+    return new THREE.IcosahedronGeometry(3.2, 4);
   }, []);
 
   useFrame(({ clock }) => {
-    if (matRef.current) {
-      matRef.current.uniforms.uTime.value = clock.elapsedTime;
-      matRef.current.uniforms.uScroll.value = scrollProgress?.current ?? 0;
-    }
+    if (!meshRef.current || !matRef.current) return;
+    const t = clock.elapsedTime;
+    const sp = scrollProgress?.current ?? 0;
+
+    // Slow rotation
+    meshRef.current.rotation.x = t * 0.06;
+    meshRef.current.rotation.y = t * 0.08;
+
+    // Breathing scale
+    const breathe = 1 + Math.sin(t * 0.3) * 0.03;
+    const scrollScale = 1 + sp * 0.15;
+    meshRef.current.scale.setScalar(breathe * scrollScale);
+
+    // Update shader uniforms
+    matRef.current.uniforms.uTime.value = t;
+    matRef.current.uniforms.uScroll.value = sp;
   });
 
   return (
-    <points geometry={geometry}>
+    <mesh ref={meshRef} geometry={geometry} position={[0, 0, -5]}>
       <shaderMaterial
         ref={matRef}
+        wireframe
         transparent
         depthWrite={false}
-        blending={THREE.AdditiveBlending}
         uniforms={{
           uTime: { value: 0 },
           uScroll: { value: 0 },
         }}
         vertexShader={
           /* glsl */ `
-          attribute float aSize;
-          attribute float aPhase;
           uniform float uTime;
           uniform float uScroll;
-          varying float vAlpha;
+          varying float vEdgeDist;
+
+          // Simple noise helper
+          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec4 permute(vec4 x) { return mod289(((x * 34.0) + 10.0) * x); }
+          vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+          float snoise(vec3 v) {
+            const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+            const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i = floor(v + dot(v, C.yyy));
+            vec3 x0 = v - i + dot(i, C.xxx);
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min(g.xyz, l.zxy);
+            vec3 i2 = max(g.xyz, l.zxy);
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy;
+            vec3 x3 = x0 - D.yyy;
+            i = mod289(i);
+            vec4 p = permute(permute(permute(
+              i.z + vec4(0.0, i1.z, i2.z, 1.0))
+              + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+              + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+            float n_ = 0.142857142857;
+            vec3 ns = n_ * D.wyz - D.xzx;
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_);
+            vec4 x = x_ * ns.x + ns.yyyy;
+            vec4 y = y_ * ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+            vec4 b0 = vec4(x.xy, y.xy);
+            vec4 b1 = vec4(x.zw, y.zw);
+            vec4 s0 = floor(b0) * 2.0 + 1.0;
+            vec4 s1 = floor(b1) * 2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+            vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+            vec3 p0 = vec3(a0.xy, h.x);
+            vec3 p1 = vec3(a0.zw, h.y);
+            vec3 p2 = vec3(a1.xy, h.z);
+            vec3 p3 = vec3(a1.zw, h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+            vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 105.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+          }
 
           void main() {
-            vec3 p = position;
-            float t = uTime * 0.15;
-            p.x += sin(t + aPhase) * 0.6;
-            p.y += cos(t * 0.8 + aPhase * 1.7) * 0.5;
-            p.z += sin(t * 0.5 + aPhase * 2.3) * 0.3;
+            vec3 pos = position;
+            float t = uTime * 0.25;
+            float freq = 0.6 + uScroll * 0.3;
 
-            vec4 mv = modelViewMatrix * vec4(p, 1.0);
-            gl_Position = projectionMatrix * mv;
-            gl_PointSize = aSize * (120.0 / -mv.z);
+            // Displace vertices along normal using noise
+            float noise = snoise(pos * freq + t);
+            float displacement = noise * (0.15 + uScroll * 0.1);
+            pos += normal * displacement;
 
-            float d = length(p.xy);
-            vAlpha = smoothstep(22.0, 2.0, d) * (0.25 + uScroll * 0.2);
+            // Secondary ripple
+            float ripple = sin(pos.y * 3.0 + t * 2.0) * 0.04;
+            pos += normal * ripple;
+
+            vEdgeDist = 0.5 + noise * 0.5;
+
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
           }
         `
         }
         fragmentShader={
           /* glsl */ `
-          varying float vAlpha;
+          uniform float uScroll;
+          varying float vEdgeDist;
+
           void main() {
-            float d = length(gl_PointCoord - 0.5);
-            gl_FragColor = vec4(1.0, 1.0, 1.0, smoothstep(0.5, 0.0, d) * vAlpha);
+            float baseOpacity = 0.12 + uScroll * 0.06;
+            float edgeFade = 0.8 + vEdgeDist * 0.4;
+            gl_FragColor = vec4(1.0, 1.0, 1.0, baseOpacity * edgeFade);
           }
         `
         }
-      />
-    </points>
-  );
-};
-
-/* ── Central wireframe icosahedron ────────────────────── */
-const CentralShape = ({ scrollProgress }: ScrollRef) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.elapsedTime;
-    const sp = scrollProgress?.current ?? 0;
-
-    meshRef.current.rotation.x = t * 0.08 + sp * 1.2;
-    meshRef.current.rotation.y = t * 0.12;
-    meshRef.current.rotation.z = t * 0.06;
-
-    const breathe = 1 + Math.sin(t * 0.4) * 0.04;
-    const scrollScale = 1 + sp * 0.25;
-    meshRef.current.scale.setScalar(breathe * scrollScale);
-  });
-
-  return (
-    <mesh ref={meshRef} position={[0, 0, -6]}>
-      <icosahedronGeometry args={[3.5, 1]} />
-      <meshBasicMaterial
-        wireframe
-        color="#ffffff"
-        opacity={0.035}
-        transparent
       />
     </mesh>
   );
 };
 
-/* ── Orbital rings ────────────────────────────────────── */
-const OrbitalRings = () => {
-  const groupRef = useRef<THREE.Group>(null);
-
-  const rings = useMemo(
-    () => [
-      {
-        radius: 5.5,
-        rotation: [1.0, 0, 0] as [number, number, number],
-        speed: 0.06,
-        opacity: 0.05,
-      },
-      {
-        radius: 6.5,
-        rotation: [0.5, 0.8, 0] as [number, number, number],
-        speed: -0.04,
-        opacity: 0.035,
-      },
-      {
-        radius: 7.5,
-        rotation: [0.2, 1.5, 0.3] as [number, number, number],
-        speed: 0.03,
-        opacity: 0.025,
-      },
-    ],
-    [],
-  );
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) return;
-    groupRef.current.children.forEach((child, i) => {
-      child.rotation.z += rings[i].speed * delta;
-    });
-  });
-
-  return (
-    <group ref={groupRef} position={[0, 0, -6]}>
-      {rings.map((r, i) => (
-        <mesh key={i} rotation={r.rotation}>
-          <torusGeometry args={[r.radius, 0.015, 4, 120]} />
-          <meshBasicMaterial color="#ffffff" opacity={r.opacity} transparent />
-        </mesh>
-      ))}
-    </group>
-  );
-};
-
-/* ── Accent shapes at edges ───────────────────────────── */
-const AccentShapes = ({ scrollProgress }: ScrollRef) => {
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-
-  const shapes = useMemo(
-    () => [
-      { x: -10, y: 5, z: -12, type: "oct" as const, r: 1.4, spd: 0.25, op: 0.04 },
-      { x: 11, y: -3, z: -9, type: "dod" as const, r: 1.2, spd: 0.2, op: 0.035 },
-      { x: -8, y: -6, z: -14, type: "ico" as const, r: 1.6, spd: 0.18, op: 0.03 },
-      { x: 9, y: 6, z: -16, type: "oct" as const, r: 1.0, spd: 0.3, op: 0.03 },
-    ],
-    [],
-  );
-
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    const sp = scrollProgress?.current ?? 0;
-
-    refs.current.forEach((mesh, i) => {
-      if (!mesh) return;
-      const s = shapes[i];
-      const dir = i % 2 === 0 ? 1 : -1;
-
-      mesh.rotation.x = t * s.spd * 0.4 * dir;
-      mesh.rotation.y = t * s.spd * 0.3;
-
-      mesh.position.y = s.y + Math.sin(t * 0.2 + i * 1.8) * 0.5;
-      mesh.position.x = s.x + Math.cos(t * 0.15 + i * 2.4) * 0.3;
-
-      const scale = 1 + sp * 0.15;
-      mesh.scale.setScalar(scale);
-    });
-  });
-
-  return (
-    <group>
-      {shapes.map((s, i) => (
-        <mesh
-          key={i}
-          ref={(el) => {
-            refs.current[i] = el;
-          }}
-          position={[s.x, s.y, s.z]}
-        >
-          {s.type === "ico" && <icosahedronGeometry args={[s.r, 0]} />}
-          {s.type === "oct" && <octahedronGeometry args={[s.r, 0]} />}
-          {s.type === "dod" && <dodecahedronGeometry args={[s.r, 0]} />}
-          <meshBasicMaterial
-            wireframe
-            color="#ffffff"
-            opacity={s.op}
-            transparent
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-};
-
-/* ── Subtle background glow ──────────────────────────── */
+/* ── Background glow (enhanced) ──────────────────────── */
 const BackgroundGlow = ({ scrollProgress }: ScrollRef) => {
   const matRef = useRef<THREE.ShaderMaterial>(null);
 
@@ -264,9 +177,10 @@ const BackgroundGlow = ({ scrollProgress }: ScrollRef) => {
 
           void main() {
             float d = distance(vUv, vec2(0.5));
-            float pulse = 1.0 + sin(uTime * 0.3) * 0.1;
-            float glow = exp(-d * 6.0) * 0.08 * pulse;
-            glow += exp(-d * 2.5) * 0.02;
+            float pulse = 1.0 + sin(uTime * 0.3) * 0.15;
+            float glow = exp(-d * 5.0) * 0.18 * pulse;
+            glow += exp(-d * 2.0) * 0.05;
+            glow *= (1.0 + uScroll * 0.3);
             gl_FragColor = vec4(1.0, 1.0, 1.0, glow);
           }
         `
@@ -274,6 +188,44 @@ const BackgroundGlow = ({ scrollProgress }: ScrollRef) => {
       />
     </mesh>
   );
+};
+
+/* ── Mouse-reactive camera ───────────────────────────── */
+const MouseCamera = () => {
+  const { camera } = useThree();
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const smoothRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = THREE.MathUtils.clamp(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -1,
+        1,
+      );
+      mouseRef.current.y = THREE.MathUtils.clamp(
+        -(e.clientY / window.innerHeight) * 2 + 1,
+        -1,
+        1,
+      );
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  useFrame(() => {
+    smoothRef.current.x +=
+      (mouseRef.current.x - smoothRef.current.x) * 0.03;
+    smoothRef.current.y +=
+      (mouseRef.current.y - smoothRef.current.y) * 0.03;
+
+    camera.position.x = smoothRef.current.x * 0.8;
+    camera.position.y = smoothRef.current.y * 0.5;
+    camera.lookAt(0, 0, -5);
+  });
+
+  return null;
 };
 
 /* ── Main scene ───────────────────────────────────────── */
@@ -291,16 +243,14 @@ const AboutScene = ({ scrollProgress }: AboutSceneProps) => (
     }}
   >
     <Canvas
-      camera={{ position: [0, 0, 15], fov: 50 }}
+      camera={{ position: [0, 0, 12], fov: 50 }}
       dpr={[1, 1.5]}
-      gl={{ antialias: false }}
+      gl={{ antialias: true }}
     >
       <color attach="background" args={["#000000"]} />
       <BackgroundGlow scrollProgress={scrollProgress} />
-      <Particles scrollProgress={scrollProgress} />
-      <CentralShape scrollProgress={scrollProgress} />
-      <OrbitalRings />
-      <AccentShapes scrollProgress={scrollProgress} />
+      <NeuralMesh scrollProgress={scrollProgress} />
+      <MouseCamera />
     </Canvas>
   </div>
 );

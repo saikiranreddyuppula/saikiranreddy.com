@@ -10,6 +10,7 @@ import Industries from "../components/Industries";
 import MountainSection from "../components/MountainScene";
 import Contact from "../components/Contact";
 import CustomCursor from "../components/CustomCursor";
+import Navbar from "../components/Navbar";
 import Loader from "../components/Loader";
 
 const Home: NextPage = () => {
@@ -91,6 +92,7 @@ const Home: NextPage = () => {
       />
       <div className={`app-content ${loading ? "app-content--hidden" : ""}`}>
         <SmoothScroll>
+          <Navbar />
           <main>
             <Hero />
             <About />

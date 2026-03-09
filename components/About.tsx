@@ -1,46 +1,14 @@
 import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
-import dynamic from "next/dynamic";
-
 gsap.registerPlugin(ScrollTrigger);
-
-const AboutScene = dynamic(() => import("./AboutScene"), { ssr: false });
-
-const headlineWords = [
-  { text: "I", accent: false },
-  { text: "architect", accent: false },
-  { text: "digital", accent: false },
-  { text: "solutions", accent: false },
-  { text: "that", accent: false },
-  { text: "transform", accent: false },
-  { text: "complexity", accent: true },
-  { text: "into", accent: false },
-  { text: "clarity.", accent: true },
-];
-
-const stats = [
-  { value: 8, suffix: "+", label: "Years" },
-  { value: 50, suffix: "+", label: "Projects" },
-  { value: 12, suffix: "", label: "Industries" },
-];
-
-const tags = [
-  "Systems Design",
-  "Cloud Architecture",
-  "Full-Stack",
-  "DevOps",
-  "AI/ML",
-];
 
 const About = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const headlineRef = useRef<HTMLHeadingElement>(null);
-  const scrollProgress = useRef(0);
-  const floatingAnimsRef = useRef<gsap.core.Tween[]>([]);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (!containerRef.current || !headlineRef.current) return;
+    if (!containerRef.current) return;
 
     const tl = gsap.timeline({ paused: true });
     const handleReveal = () => {
@@ -49,22 +17,44 @@ const About = () => {
     };
     window.addEventListener("revealAbout", handleReveal);
 
-    const ctx = gsap.context(() => {
-      const words = gsap.utils.toArray<HTMLElement>(".about-word");
-      const dividerLine = containerRef.current!.querySelector(".about-divider");
-      const statEls = gsap.utils.toArray<HTMLElement>(".about-stat");
-      const statNumbers = gsap.utils.toArray<HTMLElement>(".about-stat-number");
-      const tagline = containerRef.current!.querySelector(".about-tagline");
-      const tagEls = gsap.utils.toArray<HTMLElement>(".about-tag");
-      const sectionLabel = containerRef.current!.querySelector(".about-label");
+    // Fallback: if user lands mid-page
+    if (window.scrollY > window.innerHeight * 0.5 && tl.progress() === 0) {
+      containerRef.current.style.visibility = "visible";
+      tl.play();
+    }
 
-      // Fallback: if user lands mid-page (e.g. page refresh with scroll restored)
-      if (window.scrollY > window.innerHeight * 0.5 && tl.progress() === 0) {
-        containerRef.current!.style.visibility = "visible";
-        tl.play();
+    // Mouse tracking for Zone A parallax
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    // Smooth parallax loop for Zone A
+    const smoothMouse = { x: 0, y: 0 };
+    const statementEl = containerRef.current.querySelector(".zone-a-text") as HTMLElement;
+    let rafId: number;
+
+    const parallaxLoop = () => {
+      smoothMouse.x += (mouseRef.current.x - smoothMouse.x) * 0.04;
+      smoothMouse.y += (mouseRef.current.y - smoothMouse.y) * 0.04;
+      if (statementEl) {
+        statementEl.style.transform = `translate(${smoothMouse.x * 8}px, ${smoothMouse.y * 5}px)`;
       }
+      rafId = requestAnimationFrame(parallaxLoop);
+    };
+    rafId = requestAnimationFrame(parallaxLoop);
 
-      // === PHASE 1: Label + headline words ===
+    const ctx = gsap.context(() => {
+      const lines = gsap.utils.toArray<HTMLElement>(".statement-line");
+      const sectionLabel = containerRef.current!.querySelector(".about-label");
+      const accentWord = containerRef.current!.querySelector(".accent-word");
+
+      // ═══════════════════════════════════════════════
+      // ENTRANCE ANIMATIONS (triggered by revealAbout)
+      // ═══════════════════════════════════════════════
+
+      // Phase 1: Label
       tl.fromTo(
         sectionLabel,
         { opacity: 0, x: -20 },
@@ -72,206 +62,206 @@ const About = () => {
         0,
       );
 
-      words.forEach((word, i) => {
+      // Phase 1: Statement lines — clip reveal
+      lines.forEach((line, i) => {
         tl.fromTo(
-          word,
+          line,
           {
-            scale: 3,
-            opacity: 0,
-            rotateX: 15,
-            rotateZ: -3 + Math.random() * 6,
             clipPath: "inset(100% 0% 0% 0%)",
-            filter: "blur(8px)",
+            y: 30,
+            opacity: 0,
           },
           {
-            scale: 1,
-            opacity: 1,
-            rotateX: 0,
-            rotateZ: 0,
             clipPath: "inset(0% 0% 0% 0%)",
-            filter: "blur(0px)",
-            duration: 0.4,
+            y: 0,
+            opacity: 1,
+            duration: 0.7,
             ease: "power3.out",
           },
-          0.1 + i * 0.08,
+          0.15 + i * 0.15,
         );
       });
 
-      // === PHASE 2: Divider + stats ===
-      tl.fromTo(
-        dividerLine,
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
-        0.8,
-      );
-
-      statEls.forEach((stat, i) => {
-        tl.fromTo(
-          stat,
-          {
-            scale: 3,
-            opacity: 0,
-            filter: "blur(12px)",
-          },
-          {
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            duration: 0.5,
-            ease: "back.out(1.4)",
-          },
-          1.0 + i * 0.15,
-        );
-      });
-
-      // Count-up animation using proxy objects for reliable number interpolation
-      statNumbers.forEach((numEl, i) => {
-        const targetValue = Number(numEl.dataset.value);
-        const proxy = { val: 0 };
+      // Phase 1: Accent word glow
+      if (accentWord) {
         tl.to(
-          proxy,
+          accentWord,
           {
-            val: targetValue,
-            duration: 0.8,
-            ease: "power2.out",
-            onUpdate: () => {
-              numEl.textContent = String(Math.round(proxy.val));
-            },
+            textShadow: "0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.1)",
+            duration: 1.2,
+            ease: "power2.inOut",
+            repeat: -1,
+            yoyo: true,
           },
-          1.1 + i * 0.15,
+          0.9,
         );
-      });
+      }
 
-      // === PHASE 3: Tagline + tags ===
-      tl.fromTo(
-        tagline,
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
-        1.5,
-      );
+      // ═══════════════════════════════════════════════
+      // SCROLL-DRIVEN ANIMATIONS
+      // ═══════════════════════════════════════════════
 
-      // Staggered entrance for tags with rotation/scale variance and glow
-      tagEls.forEach((tag, i) => {
-        // Randomize initial rotation and scale for organic feel
-        const initRotation = -8 + Math.random() * 16;
-        const initScale = 0.6 + Math.random() * 0.3;
-
-        tl.fromTo(
-          tag,
-          {
-            y: 50,
-            x: -20 + Math.random() * 40,
-            opacity: 0,
-            scale: initScale,
-            rotation: initRotation,
-            filter: "blur(6px)",
+      // Zone A — Parallax on scroll
+      const zoneA = containerRef.current!.querySelector(".zone-a");
+      if (zoneA) {
+        gsap.to(".zone-a-text", {
+          y: -80,
+          ease: "none",
+          scrollTrigger: {
+            trigger: zoneA,
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
           },
+        });
+      }
+
+      // Zone B — Pull quote word reveal
+      const pullQuoteWords = gsap.utils.toArray<HTMLElement>(".pull-quote-word");
+      if (pullQuoteWords.length > 0) {
+        const pullQuoteTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".zone-b",
+            start: "top 75%",
+            end: "top 25%",
+            scrub: 1,
+          },
+        });
+
+        pullQuoteWords.forEach((word, i) => {
+          pullQuoteTl.fromTo(
+            word,
+            { opacity: 0, y: 25, filter: "blur(4px)" },
+            { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.3 },
+            i * 0.08,
+          );
+        });
+      }
+
+      // Zone B — Body text paragraphs fade in
+      const bodyParagraphs = gsap.utils.toArray<HTMLElement>(".body-paragraph");
+      bodyParagraphs.forEach((p) => {
+        gsap.fromTo(
+          p,
+          { opacity: 0, y: 30 },
           {
-            y: 0,
-            x: 0,
             opacity: 1,
-            scale: 1,
-            rotation: 0,
-            filter: "blur(0px)",
-            duration: 0.6,
-            ease: "back.out(1.7)",
-            onComplete: () => {
-              // Start idle floating animation after entrance
-              const floatY = 2 + Math.random() * 3;
-              const floatRotation = 0.5 + Math.random() * 1;
-              const floatDuration = 2.5 + Math.random() * 2;
-              const delay = Math.random() * 2;
-
-              const floatAnim = gsap.to(tag, {
-                y: -floatY,
-                rotation: floatRotation,
-                duration: floatDuration,
-                ease: "sine.inOut",
-                repeat: -1,
-                yoyo: true,
-                delay,
-              });
-              floatingAnimsRef.current.push(floatAnim);
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: p,
+              start: "top 85%",
+              toggleActions: "play none none none",
             },
           },
-          1.6 + i * 0.12,
         );
       });
+
+      // Zone B — Inline stat count-ups
+      const inlineStats = gsap.utils.toArray<HTMLElement>(".inline-stat");
+      inlineStats.forEach((el) => {
+        const target = Number(el.dataset.value);
+        const suffix = el.dataset.suffix || "";
+        const proxy = { val: 0 };
+
+        gsap.to(proxy, {
+          val: target,
+          duration: 1.2,
+          ease: "power2.out",
+          onUpdate: () => {
+            el.textContent = Math.round(proxy.val) + suffix;
+          },
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        });
+      });
+
     }, containerRef);
 
     return () => {
       window.removeEventListener("revealAbout", handleReveal);
-      floatingAnimsRef.current.forEach((anim) => anim.kill());
-      floatingAnimsRef.current = [];
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(rafId);
       ctx.revert();
     };
   }, []);
 
+  // Helper: wrap pull-quote text into word spans
+  const renderPullQuote = (text: string) =>
+    text.split(/\s+/).map((word, i) => (
+      <span key={i} className="pull-quote-word-wrap">
+        <span className="pull-quote-word">{word}</span>{" "}
+      </span>
+    ));
+
   return (
     <section ref={containerRef} id="about" className="about-section" style={{ visibility: "hidden" }}>
-      <AboutScene scrollProgress={scrollProgress} />
-
+      {/* Section label */}
       <div className="about-label">
         <span className="label-index">01</span>
         <span className="label-dash">&mdash;</span>
         <span className="label-text">ABOUT</span>
       </div>
 
-      <div className="about-content">
-        <h2 className="about-headline" ref={headlineRef}>
-          {headlineWords.map((word, i) => (
-            <span key={i} className="about-word-wrapper">
-              <span
-                className={`about-word ${word.accent ? "about-word--accent" : ""}`}
-              >
-                {word.text}
-              </span>
+      {/* ═══ ZONE A — The Hook ═══ */}
+      <div className="zone-a">
+        <div className="zone-a-text">
+          <h2 className="statement">
+            <span className="statement-line">I don&rsquo;t just write code.</span>
+            <span className="statement-line">
+              I build the{" "}
+              <em className="accent-word">systems</em>
             </span>
-          ))}
-        </h2>
-
-        <div className="about-divider" />
-
-        <div className="about-stats-row">
-          <div className="about-light-motif" aria-hidden="true" />
-          {stats.map((stat, i) => (
-            <div key={i} className="about-stat">
-              <div className="about-stat-value">
-                <span className="about-stat-number" data-value={stat.value}>
-                  0
-                </span>
-                <span className="about-stat-suffix">{stat.suffix}</span>
-              </div>
-              <span className="about-stat-label">{stat.label}</span>
-            </div>
-          ))}
+            <span className="statement-line">that make everything else possible.</span>
+          </h2>
         </div>
 
-        <div className="about-bottom">
-          <p className="about-tagline">
-            Building scalable systems from early-stage startups to enterprise
-            &mdash; across 12 industries and 50+ projects.
-          </p>
+      </div>
 
-          <div className="about-tags">
-            {tags.map((tag, i) => (
-              <span key={i} className="about-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
+      {/* ═══ ZONE B — The Narrative ═══ */}
+      <div className="zone-b">
+        <div className="zone-b-left">
+          <blockquote className="pull-quote">
+            {renderPullQuote("Eight years of turning \"this can\u2019t be done\" into production.")}
+          </blockquote>
+        </div>
+
+        <div className="zone-b-right">
+          <p className="body-paragraph">
+            From early-stage startups to high-scale platforms, I&rsquo;ve
+            been the engineer teams count on to deliver.
+          </p>
+          <p className="body-paragraph">
+            Today I design systems for organizations across{" "}
+            <span className="inline-stat interactive" data-value="12" data-suffix="">0</span>{" "}
+            industries &mdash; from healthcare platforms handling patient data
+            to e-commerce engines processing millions of transactions.{" "}
+            <span className="inline-stat interactive" data-value="50" data-suffix="+">0</span>{" "}
+            projects, each one a lesson in what scales and what breaks.
+          </p>
+          <p className="body-paragraph">
+            I think in systems. Not frameworks, not languages &mdash; systems.
+            I architect for scale and ship with precision. Every system I
+            build is meant to last.
+          </p>
         </div>
       </div>
 
+
       <style jsx>{`
+        /* ── Section container ─────────────────────── */
         .about-section {
-          height: 100vh;
           position: relative;
           z-index: 2;
           background: #000;
           overflow: hidden;
         }
 
+        /* ── Label ────────────────────────────────── */
         .about-label {
           position: absolute;
           top: 3rem;
@@ -303,188 +293,125 @@ const About = () => {
           color: rgba(255, 255, 255, 0.5);
         }
 
-        .about-content {
-          position: relative;
-          z-index: 1;
-          height: 100%;
+        /* ═══ ZONE A ══════════════════════════════ */
+        .zone-a {
+          min-height: 100vh;
           display: flex;
-          flex-direction: column;
-          justify-content: center;
           align-items: center;
-          text-align: center;
+          padding: 8rem 4rem 6rem;
+          position: relative;
           max-width: 1200px;
           margin: 0 auto;
-          padding: 0 4rem;
-          perspective: 1000px;
         }
 
-        .about-headline {
-          font-family: var(--font-serif);
-          font-size: clamp(2.5rem, 5vw, 4.5rem);
+        .zone-a-text {
+          position: relative;
+          z-index: 2;
+          will-change: transform;
+        }
+
+        .statement {
+          font-family: 'Cormorant Garamond', var(--font-serif);
+          font-size: clamp(2.8rem, 6vw, 5rem);
           font-weight: 300;
-          line-height: 1.25;
+          line-height: 1.2;
           color: #fff;
-          margin: 0 0 2.5rem;
-          max-width: 900px;
+          margin: 0;
+          text-align: left;
         }
 
-        .about-word-wrapper {
+        .statement-line {
+          display: block;
+          will-change: transform, opacity, clip-path;
+          opacity: 0;
+        }
+
+        .accent-word {
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* ═══ ZONE B ══════════════════════════════ */
+        .zone-b {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 6rem;
+          padding: 8rem 4rem 10rem;
+          max-width: 1400px;
+          margin: 0 auto;
+          align-items: start;
+        }
+
+        .zone-b-left {
+          position: relative;
+        }
+
+        .zone-b-right {
+          padding-top: 8rem;
+        }
+
+        .pull-quote {
+          font-family: 'Cormorant Garamond', var(--font-serif);
+          font-size: clamp(2rem, 4vw, 3.5rem);
+          font-weight: 300;
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.7);
+          line-height: 1.3;
+          margin: 0;
+          padding: 0;
+          border: none;
+        }
+
+        .pull-quote-word-wrap {
           display: inline-block;
           overflow: hidden;
           vertical-align: bottom;
-          margin-right: 0.25em;
-          line-height: 1.3;
-          perspective: 600px;
         }
 
-        .about-word {
+        .pull-quote-word {
           display: inline-block;
-          will-change: transform, opacity, clip-path, filter;
-        }
-
-        .about-word--accent {
-          color: rgba(255, 255, 255, 0.5);
-          font-style: italic;
-        }
-
-        .about-divider {
-          width: min(500px, 60%);
-          height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.4),
-            transparent
-          );
-          margin-bottom: 3rem;
-          transform-origin: center;
-          transform: scaleX(0);
-        }
-
-        .about-stats-row {
-          display: flex;
-          justify-content: center;
-          gap: clamp(3rem, 8vw, 8rem);
-          margin-bottom: 3rem;
-          will-change: transform;
-          position: relative;
-        }
-
-        .about-light-motif {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 500px;
-          height: 300px;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(255, 250, 240, 0.06) 0%,
-            rgba(255, 255, 255, 0.02) 40%,
-            transparent 70%
-          );
-          pointer-events: none;
-          animation: aboutGlowPulse 5s ease-in-out infinite;
-          z-index: 0;
-        }
-
-        @keyframes aboutGlowPulse {
-          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
-          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-        }
-
-        .about-stat {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.5rem;
-          opacity: 0;
           will-change: transform, opacity, filter;
+          opacity: 0;
         }
 
-        .about-stat-value {
-          display: flex;
-          align-items: baseline;
+        .body-paragraph {
+          font-family: 'Cormorant Garamond', var(--font-serif);
+          font-size: clamp(1rem, 1.5vw, 1.2rem);
+          font-weight: 400;
+          color: rgba(255, 255, 255, 0.5);
+          line-height: 1.8;
+          margin: 0 0 2rem;
+          opacity: 0;
         }
 
-        .about-stat-number {
-          font-family: var(--font-display);
-          font-size: clamp(3rem, 6vw, 5rem);
+        .body-paragraph:last-child {
+          margin-bottom: 0;
+        }
+
+        .inline-stat {
+          font-family: 'Space Grotesk', var(--font-display);
+          font-size: clamp(1.8rem, 3vw, 2.5rem);
           font-weight: 700;
           color: #fff;
           line-height: 1;
-          letter-spacing: -0.02em;
+          vertical-align: baseline;
+          cursor: default;
+          transition: text-shadow 0.3s ease;
         }
 
-        .about-stat-suffix {
-          font-family: var(--font-display);
-          font-size: clamp(1.5rem, 3vw, 2.5rem);
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.4);
-          line-height: 1;
+        .inline-stat:hover {
+          text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
-        .about-stat-label {
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.35);
-        }
-
-        .about-bottom {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2rem;
-          will-change: transform;
-        }
-
-        .about-tagline {
-          font-family: var(--font-serif);
-          font-size: clamp(0.95rem, 1.5vw, 1.15rem);
-          font-style: italic;
-          color: rgba(255, 255, 255, 0.45);
-          max-width: 500px;
-          line-height: 1.6;
-          opacity: 0;
-          margin: 0;
-        }
-
-        .about-tags {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 0.75rem;
-        }
-
-        .about-tag {
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          padding: 0.6rem 1.25rem;
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          color: rgba(255, 255, 255, 0.5);
-          transition: color 0.3s ease, border-color 0.3s ease,
-            background 0.3s ease, box-shadow 0.4s ease;
-          opacity: 0;
-          will-change: transform, opacity, filter;
-          backdrop-filter: blur(4px);
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .about-tag:hover {
-          background: rgba(255, 255, 255, 0.95);
-          color: #000;
-          border-color: rgba(255, 255, 255, 0.9);
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.15),
-            0 0 40px rgba(255, 255, 255, 0.05);
-        }
-
+        /* ── Responsive ──────────────────────────── */
         @media (max-width: 1024px) {
-          .about-content {
-            padding: 0 2.5rem;
+          .zone-a {
+            padding: 6rem 2.5rem 4rem;
+          }
+
+          .zone-b {
+            padding: 6rem 2.5rem 8rem;
+            gap: 4rem;
           }
 
           .about-label {
@@ -498,43 +425,27 @@ const About = () => {
             left: 1.5rem;
           }
 
-          .about-content {
-            padding: 0 1.5rem;
+          .zone-a {
+            padding: 6rem 1.5rem 4rem;
+            min-height: auto;
           }
 
-          .about-headline {
-            font-size: clamp(1.8rem, 7vw, 2.5rem);
-            margin-bottom: 2rem;
+          .statement {
+            font-size: clamp(2rem, 8vw, 2.8rem);
           }
 
-          .about-stats-row {
-            flex-direction: column;
-            gap: 2rem;
+          .zone-b {
+            grid-template-columns: 1fr;
+            padding: 4rem 1.5rem 6rem;
+            gap: 3rem;
           }
 
-          .about-stat-number {
-            font-size: 3rem;
+          .zone-b-right {
+            padding-top: 0;
           }
 
-          .about-divider {
-            width: 80%;
-          }
-
-          .about-tags {
-            gap: 0.5rem;
-          }
-
-          .about-tag {
-            font-size: 0.65rem;
-            padding: 0.5rem 1rem;
-          }
-        }
-
-        @media (pointer: coarse) {
-          .about-tag:hover {
-            background: transparent;
-            color: rgba(255, 255, 255, 0.5);
-            border-color: rgba(255, 255, 255, 0.15);
+          .pull-quote {
+            font-size: clamp(1.6rem, 6vw, 2.2rem);
           }
         }
       `}</style>

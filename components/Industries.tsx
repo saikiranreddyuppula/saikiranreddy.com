@@ -514,7 +514,7 @@ const Industries = () => {
     }, []);
 
     return (
-        <section ref={containerRef} className="industries-section">
+        <section ref={containerRef} id="industries" className="industries-section">
             <div ref={headerRef} className={`industries-header ${isHeaderVisible ? 'is-visible' : ''}`}>
                 <div className="header-label">
                     <span className="label-index">02</span>

@@ -686,7 +686,7 @@ const MountainSection: React.FC = () => {
   }, []);
 
   return (
-    <section ref={containerRef} className="mountain-section">
+    <section ref={containerRef} id="journey" className="mountain-section">
       <div className="mountain-canvas-container">
         <MountainCanvas scrollProgress={scrollProgress} />
       </div>
