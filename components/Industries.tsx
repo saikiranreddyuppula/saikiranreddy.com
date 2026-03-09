@@ -5,33 +5,33 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 const industries = [
-    { 
-        name: "Ecommerce", 
+    {
+        name: "Ecommerce",
         number: "01",
         description: "Scalable platforms that handle millions of transactions",
     },
-    { 
-        name: "Cyber Security", 
+    {
+        name: "Cyber Security",
         number: "02",
         description: "Zero-trust architectures and threat detection systems",
     },
-    { 
-        name: "Healthcare", 
+    {
+        name: "Healthcare",
         number: "03",
         description: "HIPAA-compliant systems for patient data management",
     },
-    { 
-        name: "Hospitality", 
+    {
+        name: "Hospitality",
         number: "04",
         description: "Real-time booking engines and guest experiences",
     },
-    { 
-        name: "Artificial Intelligence", 
+    {
+        name: "Artificial Intelligence",
         number: "05",
         description: "ML pipelines and intelligent automation systems",
     },
-    { 
-        name: "Manufacturing", 
+    {
+        name: "Manufacturing",
         number: "06",
         description: "IoT integration and supply chain optimization",
     }
@@ -47,7 +47,13 @@ interface CardProps {
 
 const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }: CardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
+    const bgNumberRef = useRef<HTMLSpanElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const lineRef = useRef<HTMLDivElement>(null);
+    const borderRef = useRef<HTMLDivElement>(null);
+    const glowRef = useRef<HTMLDivElement>(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const breatheAnimRef = useRef<gsap.core.Tween | null>(null);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!cardRef.current) return;
@@ -58,10 +64,100 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
         });
     };
 
+    // Active state animations - breathing glow, line draw, bg number spring
+    useEffect(() => {
+        if (!cardRef.current) return;
+        const border = borderRef.current;
+        const line = lineRef.current;
+        const bgNum = bgNumberRef.current;
+        const glow = glowRef.current;
+
+        if (isActive) {
+            // Breathing border glow
+            if (border) {
+                breatheAnimRef.current = gsap.to(border, {
+                    borderColor: 'rgba(255, 255, 255, 0.45)',
+                    boxShadow: '0 0 30px rgba(255, 255, 255, 0.08), inset 0 0 30px rgba(255, 255, 255, 0.03)',
+                    duration: 1.2,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: 'sine.inOut',
+                });
+            }
+
+            // Line draw animation
+            if (line) {
+                gsap.fromTo(line,
+                    { width: 0, opacity: 1 },
+                    { width: 80, duration: 0.6, ease: 'power2.out' }
+                );
+            }
+
+            // Background number spring scale
+            if (bgNum) {
+                gsap.to(bgNum, {
+                    scale: 1.15,
+                    x: -15,
+                    y: -15,
+                    duration: 0.8,
+                    ease: 'elastic.out(1, 0.5)',
+                    overwrite: true,
+                });
+            }
+
+            // Glow fade in
+            if (glow) {
+                gsap.to(glow, { opacity: 1, duration: 0.3 });
+            }
+        } else {
+            // Clean up breathing animation
+            if (breatheAnimRef.current) {
+                breatheAnimRef.current.kill();
+                breatheAnimRef.current = null;
+            }
+
+            if (border) {
+                gsap.to(border, {
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    boxShadow: 'none',
+                    duration: 0.4,
+                    overwrite: true,
+                });
+            }
+
+            if (line) {
+                gsap.to(line, { width: 40, duration: 0.4, ease: 'power2.out' });
+            }
+
+            if (bgNum) {
+                gsap.to(bgNum, {
+                    scale: 1,
+                    x: 0,
+                    y: 0,
+                    duration: 0.6,
+                    ease: 'power3.out',
+                    overwrite: true,
+                });
+            }
+
+            if (glow) {
+                gsap.to(glow, { opacity: 0, duration: 0.3 });
+            }
+        }
+
+        return () => {
+            if (breatheAnimRef.current) {
+                breatheAnimRef.current.kill();
+                breatheAnimRef.current = null;
+            }
+        };
+    }, [isActive]);
+
     return (
-        <div 
+        <div
             ref={cardRef}
             className={`industry-card interactive ${isActive ? 'is-active' : ''}`}
+            data-card-index={index}
             onMouseMove={handleMouseMove}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
@@ -71,22 +167,23 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
             } as React.CSSProperties}
         >
             <div className="card-bg"></div>
-            <div className="card-glow"></div>
-            <div className="card-border"></div>
+            <div ref={glowRef} className="card-glow"></div>
+            <div className="card-light-ray" aria-hidden="true"></div>
+            <div ref={borderRef} className="card-border"></div>
 
-            <div className="card-content">
+            <div ref={contentRef} className="card-content">
                 <div className="card-header">
-                    <span className="card-number">{industry.number}</span>
+                    <span className="card-number card-parallax-item" data-parallax-speed="0.3">{industry.number}</span>
                 </div>
-                
-                <h3 className="card-title">{industry.name}</h3>
-                
-                <p className="card-description">{industry.description}</p>
-                
-                <div className="card-line"></div>
+
+                <h3 className="card-title card-parallax-item" data-parallax-speed="0.15">{industry.name}</h3>
+
+                <p className="card-description card-parallax-item" data-parallax-speed="0.08">{industry.description}</p>
+
+                <div ref={lineRef} className="card-line card-parallax-item" data-parallax-speed="0.05"></div>
             </div>
 
-            <span className="card-bg-number">{industry.number}</span>
+            <span ref={bgNumberRef} className="card-bg-number" data-parallax-speed="0.6">{industry.number}</span>
 
             <style jsx>{`
                 .industry-card {
@@ -100,11 +197,7 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     padding: 2.5rem;
                     overflow: hidden;
                     cursor: pointer;
-                    transition: transform 0.6s var(--ease-out-expo);
-                }
-
-                .industry-card:hover {
-                    transform: translateY(-12px);
+                    will-change: transform, opacity;
                 }
 
                 .card-bg {
@@ -116,7 +209,7 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                         rgba(10, 10, 10, 0.95) 100%
                     );
                     backdrop-filter: blur(20px);
-                    transition: all 0.4s ease;
+                    transition: background 0.4s ease;
                 }
 
                 .industry-card.is-active .card-bg {
@@ -136,11 +229,28 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                         transparent 40%
                     );
                     opacity: 0;
-                    transition: opacity 0.3s;
                     pointer-events: none;
                 }
 
-                .industry-card.is-active .card-glow {
+                .card-light-ray {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 60%;
+                    height: 120px;
+                    background: linear-gradient(
+                        180deg,
+                        rgba(255, 250, 240, 0.06) 0%,
+                        transparent 100%
+                    );
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.6s ease;
+                    z-index: 1;
+                }
+
+                .is-active .card-light-ray {
                     opacity: 1;
                 }
 
@@ -148,12 +258,7 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     position: absolute;
                     inset: 0;
                     border: 1px solid rgba(255, 255, 255, 0.1);
-                    transition: border-color 0.3s;
                     pointer-events: none;
-                }
-
-                .industry-card.is-active .card-border {
-                    border-color: rgba(255, 255, 255, 0.3);
                 }
 
                 .card-content {
@@ -206,11 +311,9 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     height: 1px;
                     width: 40px;
                     background: rgba(255, 255, 255, 0.4);
-                    transition: width 0.4s var(--ease-out-expo);
                 }
 
                 .industry-card.is-active .card-line {
-                    width: 80px;
                     background: #fff;
                 }
 
@@ -225,12 +328,11 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                     -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
                     line-height: 1;
                     pointer-events: none;
-                    transition: all 0.4s ease;
+                    will-change: transform;
                 }
 
                 .industry-card.is-active .card-bg-number {
                     -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
-                    transform: translate(-10px, -10px);
                 }
             `}</style>
         </div>
@@ -268,8 +370,9 @@ const Industries = () => {
         if (!horizontal || !container) return;
 
         const scrollWidth = horizontal.scrollWidth - window.innerWidth;
-        
+
         const ctx = gsap.context(() => {
+            // --- Main horizontal scroll ---
             gsap.to(horizontal, {
                 x: -scrollWidth,
                 ease: 'none',
@@ -293,21 +396,117 @@ const Industries = () => {
                 }
             });
 
-            if (header) {
-                gsap.fromTo(header, 
-                    { opacity: 1, y: 0 },
-                    {
-                        opacity: 0,
-                        y: -60,
-                        ease: 'power2.in',
+            const cards = horizontal.querySelectorAll('.industry-card');
+
+            // --- Parallax depth within cards ---
+            // Background numbers and content items move at different rates
+            cards.forEach((card) => {
+                const bgNumber = card.querySelector('.card-bg-number');
+                const parallaxItems = card.querySelectorAll('.card-parallax-item');
+
+                if (bgNumber) {
+                    const speed = parseFloat((bgNumber as HTMLElement).dataset.parallaxSpeed || '0.5');
+                    gsap.to(bgNumber, {
+                        y: () => -80 * speed,
+                        x: () => -40 * speed,
+                        ease: 'none',
                         scrollTrigger: {
                             trigger: container,
-                            start: () => `top+=${scrollWidth * 0.25} top`,
-                            end: () => `top+=${scrollWidth * 0.5} top`,
+                            start: 'top top',
+                            end: () => `+=${scrollWidth}`,
                             scrub: 1,
+                            invalidateOnRefresh: true,
                         }
+                    });
+                }
+
+                parallaxItems.forEach((item) => {
+                    const speed = parseFloat((item as HTMLElement).dataset.parallaxSpeed || '0.1');
+                    gsap.to(item, {
+                        y: () => -30 * speed,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger: container,
+                            start: 'top top',
+                            end: () => `+=${scrollWidth}`,
+                            scrub: 1,
+                            invalidateOnRefresh: true,
+                        }
+                    });
+                });
+            });
+
+            // --- Header word scatter/dissolve ---
+            if (header) {
+                // Wrap each word in the header title in a span for individual animation
+                const titleEl = header.querySelector('.header-title');
+                if (titleEl) {
+                    const html = titleEl.innerHTML;
+                    // Split by words but preserve <br /> and <span> tags
+                    const processNode = (node: Node): string => {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            const text = node.textContent || '';
+                            return text.split(/(\s+)/).map(word => {
+                                if (word.trim() === '') return word;
+                                // Random scatter direction
+                                const rx = (Math.random() - 0.5) * 120;
+                                const ry = (Math.random() - 0.5) * 80;
+                                return `<span class="scatter-word" data-rx="${rx}" data-ry="${ry}" style="display:inline-block;will-change:transform,opacity,filter;">${word}</span>`;
+                            }).join('');
+                        } else if (node.nodeType === Node.ELEMENT_NODE) {
+                            const el = node as Element;
+                            if (el.tagName === 'BR') return '<br />';
+                            const children = Array.from(el.childNodes).map(processNode).join('');
+                            // Preserve the element but process its children
+                            const attrs = Array.from(el.attributes).map(a => `${a.name}="${a.value}"`).join(' ');
+                            return `<${el.tagName.toLowerCase()} ${attrs}>${children}</${el.tagName.toLowerCase()}>`;
+                        }
+                        return '';
+                    };
+
+                    // Create a temp container to parse
+                    const temp = document.createElement('div');
+                    temp.innerHTML = html;
+                    titleEl.innerHTML = Array.from(temp.childNodes).map(processNode).join('');
+
+                    // Animate scatter words
+                    const scatterWords = titleEl.querySelectorAll('.scatter-word');
+                    scatterWords.forEach((word) => {
+                        const rx = parseFloat((word as HTMLElement).dataset.rx || '0');
+                        const ry = parseFloat((word as HTMLElement).dataset.ry || '0');
+
+                        gsap.to(word, {
+                            x: rx,
+                            y: ry,
+                            opacity: 0,
+                            filter: 'blur(8px)',
+                            ease: 'power2.in',
+                            scrollTrigger: {
+                                trigger: container,
+                                start: () => `top+=${scrollWidth * 0.2} top`,
+                                end: () => `top+=${scrollWidth * 0.45} top`,
+                                scrub: 1,
+                            }
+                        });
+                    });
+
+                    // Also scatter the label
+                    const labelEl = header.querySelector('.header-label');
+                    if (labelEl) {
+                        gsap.to(labelEl, {
+                            y: -40,
+                            opacity: 0,
+                            filter: 'blur(6px)',
+                            ease: 'power2.in',
+                            scrollTrigger: {
+                                trigger: container,
+                                start: () => `top+=${scrollWidth * 0.15} top`,
+                                end: () => `top+=${scrollWidth * 0.35} top`,
+                                scrub: 1,
+                            }
+                        });
                     }
-                );
+                }
             }
         }, container);
 
@@ -315,14 +514,14 @@ const Industries = () => {
     }, []);
 
     return (
-        <section ref={containerRef} className="industries-section">
+        <section ref={containerRef} id="industries" className="industries-section">
             <div ref={headerRef} className={`industries-header ${isHeaderVisible ? 'is-visible' : ''}`}>
                 <div className="header-label">
                     <span className="label-index">02</span>
                     <span className="label-line"></span>
                     <span className="label-text">Industries</span>
                 </div>
-                
+
                 <h2 className="header-title">
                     From startups to enterprise,
                     <br />
@@ -332,9 +531,9 @@ const Industries = () => {
 
             <div ref={horizontalRef} className="industries-scroll">
                 {industries.map((industry, index) => (
-                    <IndustryCard 
-                        key={index} 
-                        industry={industry} 
+                    <IndustryCard
+                        key={index}
+                        industry={industry}
                         index={index}
                         isActive={activeIndex === index}
                         onMouseEnter={() => setActiveIndex(index)}
@@ -357,6 +556,7 @@ const Industries = () => {
                     background: #000;
                     position: relative;
                     z-index: 1;
+                    perspective: 1200px;
                 }
 
                 .pin-spacer {
@@ -428,6 +628,7 @@ const Industries = () => {
                     padding-top: 32vh;
                     gap: 2rem;
                     will-change: transform;
+                    transform-style: preserve-3d;
                 }
 
                 .industries-scroll::after {

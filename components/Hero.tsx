@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import dynamic from "next/dynamic";
@@ -9,34 +9,91 @@ gsap.registerPlugin(ScrollTrigger);
 
 const HeroScene = dynamic(() => import("./HeroScene"), { ssr: false });
 
+/** Split text into spans, preserving spaces as explicit characters */
+const splitText = (text: string, baseClass: string, wordClass?: string) => {
+  const chars: React.ReactElement[] = [];
+  let charIndex = 0;
+  const words = text.split(" ");
+
+  words.forEach((word, wi) => {
+    const isSpecialWord = wordClass && word.toLowerCase() === "light";
+    word.split("").forEach((char) => {
+      chars.push(
+        <span
+          key={charIndex}
+          className={`${baseClass} ${isSpecialWord ? wordClass : ""}`}
+          style={{ display: "inline-block" }}
+        >
+          {char}
+        </span>,
+      );
+      charIndex++;
+    });
+    // Add space between words (not after last)
+    if (wi < words.length - 1) {
+      chars.push(
+        <span
+          key={`space-${wi}`}
+          className={baseClass}
+          style={{ display: "inline-block", width: "0.3em" }}
+        >
+          {"\u00A0"}
+        </span>,
+      );
+      charIndex++;
+    }
+  });
+
+  return chars;
+};
+
 const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollProgress = useRef(0);
-  const flashFadeRef = useRef<gsap.core.Tween | null>(null);
   const lenisRef = useRef<any>(null);
-  const flashControlActive = useRef(true);
   const isTransitioning = useRef(false);
+  const taglineRef = useRef<HTMLParagraphElement>(null);
+
+  const heroChars = useMemo(
+    () => splitText("Find the light within", "hero-char", "hero-light-char"),
+    [],
+  );
 
   useLenis((lenis: any) => {
     lenisRef.current = lenis;
   });
 
   useEffect(() => {
-    const flashEl = document.querySelector(".hero-flash") as HTMLElement;
+    const chars = gsap.utils.toArray<HTMLElement>(".hero-char");
+    const lightChars = gsap.utils.toArray<HTMLElement>(".hero-light-char");
 
+    // === Intro: character-level stagger animation ===
     const introTl = gsap.timeline({ delay: 2.2 });
 
+    // Fade in the tagline container first (it starts opacity:0)
+    introTl.set(".hero-tagline", { opacity: 1 });
+
+    // Stagger each character in
     introTl.fromTo(
-      ".hero-tagline",
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 1, ease: "power2.out" },
+      chars,
+      { opacity: 0, y: 18, rotateX: -60 },
+      {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.6,
+        ease: "power3.out",
+        stagger: 0.035,
+      },
+      0,
     );
 
+    // Scroll indicator fade in (after text lands)
     introTl.fromTo(
-      ".hero-scroll-prompt",
+      ".hero-scroll-line-wrap",
       { opacity: 0 },
       { opacity: 1, duration: 0.8, ease: "power2.out" },
-      "-=0.4",
+      0.8,
     );
 
     introTl.fromTo(
@@ -46,13 +103,13 @@ const Hero = () => {
       "-=0.3",
     );
 
-    const lightWordEl = document.querySelector(".hero-light-word") as HTMLElement;
+    // === Random glow on "light" characters ===
     const randomGlow = () => {
       const intensity = 0.4 + Math.random() * 0.6;
       const spread = 15 + Math.random() * 50;
       const spread2 = 30 + Math.random() * 60;
       const duration = 0.3 + Math.random() * 1.2;
-      gsap.to(lightWordEl, {
+      gsap.to(lightChars, {
         textShadow: `0 0 ${4 + Math.random() * 4}px #fff, 0 0 ${spread}px rgba(255,255,255,${intensity}), 0 0 ${spread2}px rgba(255,255,255,${intensity * 0.5})`,
         duration,
         ease: "power1.inOut",
@@ -61,6 +118,7 @@ const Hero = () => {
     };
     randomGlow();
 
+    // === Scroll-cue line animation ===
     gsap.to(".scroll-cue-line", {
       y: 24,
       opacity: 0,
@@ -70,6 +128,7 @@ const Hero = () => {
       repeatDelay: 0.6,
     });
 
+    // === Scroll-responsive: letter-spacing shift on scroll ===
     const scrollTl = gsap.timeline({
       scrollTrigger: {
         trigger: containerRef.current,
@@ -80,61 +139,84 @@ const Hero = () => {
         scrub: 0.3,
         onUpdate: (self) => {
           scrollProgress.current = self.progress;
-          if (flashEl && flashControlActive.current) {
-            const flashOpacity = Math.min(
-              1,
-              Math.max(0, (self.progress - 0.4) / 0.3),
-            );
-            flashEl.style.opacity = String(flashOpacity);
+
+          // Scroll-responsive letter spacing on individual characters
+          const progress = self.progress;
+          if (taglineRef.current) {
+            // Subtle letter-spacing expansion as user scrolls
+            const spacing = progress * 0.15; // max 0.15em extra
+            taglineRef.current.style.letterSpacing = `${0.05 + spacing}em`;
           }
+
+          // Per-character subtle vertical drift based on scroll
+          chars.forEach((char, i) => {
+            const offset = Math.sin(i * 0.7 + progress * Math.PI) * progress * 4;
+            gsap.set(char, { y: offset });
+          });
         },
         onLeave: () => {
           if (isTransitioning.current) return;
           isTransitioning.current = true;
-          flashControlActive.current = false;
 
           const lenis = lenisRef.current;
-          if (flashFadeRef.current) flashFadeRef.current.kill();
-          if (flashEl) {
-            flashEl.style.visibility = "visible";
-            flashEl.style.opacity = "1";
-          }
+
+          // Smooth crossfade: fade hero out, then scroll to about
           if (containerRef.current) {
-            containerRef.current.style.visibility = "hidden";
-          }
+            gsap.to(containerRef.current, {
+              opacity: 0,
+              scale: 0.97,
+              duration: 0.5,
+              ease: "power2.inOut",
+              onComplete: () => {
+                if (containerRef.current) {
+                  containerRef.current.style.visibility = "hidden";
+                }
 
-          // Scroll to about — native fallback ensures it works even if Lenis is stopped
-          const aboutEl = document.getElementById("about");
-          if (aboutEl) {
-            window.scrollTo({ top: aboutEl.offsetTop, behavior: "instant" as ScrollBehavior });
-          }
-          if (lenis) lenis.stop();
+                // Scroll to about section
+                const aboutEl = document.getElementById("about");
+                if (aboutEl) {
+                  window.scrollTo({
+                    top: aboutEl.offsetTop,
+                    behavior: "instant" as ScrollBehavior,
+                  });
+                }
+                if (lenis) lenis.stop();
 
-          flashFadeRef.current = gsap.to(flashEl, {
-            opacity: 0,
-            duration: 0.4,
-            delay: 0.1,
-            ease: "power2.inOut",
-            onStart: () => {
-              window.dispatchEvent(new Event("revealAbout"));
-            },
-            onComplete: () => {
-              if (flashEl) flashEl.style.visibility = "hidden";
-              if (lenis) lenis.start();
-              isTransitioning.current = false;
-            },
-          });
+                // Reveal about with a slight delay
+                window.dispatchEvent(new Event("revealAbout"));
+
+                // Re-enable scrolling after about is revealed
+                gsap.delayedCall(0.3, () => {
+                  if (lenis) lenis.start();
+                  isTransitioning.current = false;
+                });
+              },
+            });
+          }
         },
         onEnterBack: () => {
-          if (flashFadeRef.current) flashFadeRef.current.kill();
-          flashControlActive.current = true;
           isTransitioning.current = false;
+
           if (containerRef.current) {
             containerRef.current.style.visibility = "visible";
+            gsap.to(containerRef.current, {
+              opacity: 1,
+              scale: 1,
+              duration: 0.4,
+              ease: "power2.out",
+            });
           }
-          if (flashEl) {
-            flashEl.style.visibility = "visible";
+
+          // Reset letter-spacing
+          if (taglineRef.current) {
+            taglineRef.current.style.letterSpacing = "0.05em";
           }
+
+          // Reset character positions
+          chars.forEach((char) => {
+            gsap.set(char, { y: 0 });
+          });
+
           // Hide about section so it doesn't leak through on next scroll
           const aboutEl = document.getElementById("about");
           if (aboutEl) aboutEl.style.visibility = "hidden";
@@ -142,64 +224,36 @@ const Hero = () => {
       },
     });
 
-    scrollTl.to(".hero-text", { opacity: 0, y: -30, duration: 0.5 }, 0);
+    // Fade hero text + scroll cue as user scrolls
+    scrollTl.to(
+      ".hero-text",
+      { opacity: 0, y: -30, duration: 0.5 },
+      0,
+    );
     scrollTl.to(".scroll-cue", { opacity: 0, duration: 1 }, 0);
 
     return () => {
       introTl.kill();
       scrollTl.kill();
-      gsap.killTweensOf(lightWordEl);
-      if (flashFadeRef.current) flashFadeRef.current.kill();
+      gsap.killTweensOf(lightChars);
+      gsap.killTweensOf(chars);
     };
   }, []);
 
   return (
-    <section ref={containerRef} className="hero">
+    <section ref={containerRef} id="hero" className="hero">
       <HeroScene scrollProgress={scrollProgress} />
 
       <div className="hero-text">
-        <p className="hero-tagline interactive">Find the <span className="hero-light-word">light</span> within</p>
-        <div className="hero-scroll-prompt interactive">
-          <svg
-            className="hero-scroll-arrow"
-            viewBox="0 0 20 60"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <linearGradient
-                id="arrowTrail"
-                x1="10"
-                y1="0"
-                x2="10"
-                y2="60"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
-                <stop offset="40%" stopColor="#ffffff" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <line
-              className="arrow-line"
-              x1="10"
-              y1="0"
-              x2="10"
-              y2="42"
-              stroke="url(#arrowTrail)"
-              strokeWidth="1"
-            />
-            <path
-              className="arrow-tip"
-              d="M4 36L10 44L16 36"
-              stroke="#ffffff"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </svg>
-          <span className="hero-scroll-label">scroll</span>
+        <p className="hero-tagline interactive" ref={taglineRef}>
+          {heroChars}
+        </p>
+
+        {/* Minimal scroll indicator: thin animated line */}
+        <div className="hero-scroll-line-wrap interactive">
+          <div className="hero-scroll-line-track">
+            <div className="hero-scroll-line-pulse" />
+          </div>
         </div>
       </div>
 
@@ -240,98 +294,59 @@ const Hero = () => {
           margin: 0 0 0.2rem;
           opacity: 0;
           white-space: nowrap;
+          perspective: 600px;
         }
 
-        .hero-light-word {
-          color: #fff;
-        }
-
-        .hero-scroll-prompt {
+        /* Scroll indicator: minimal pulsing line */
+        .hero-scroll-line-wrap {
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.2rem;
+          justify-content: center;
+          margin-top: 1.5rem;
           opacity: 0;
           margin-bottom: 1.5rem;
         }
 
-        .hero-scroll-arrow {
-          width: 20px;
-          height: 36px;
-          overflow: visible;
-          margin-top: 0.5rem;
+        .hero-scroll-line-track {
+          width: 1px;
+          height: 48px;
+          background: rgba(255, 255, 255, 0.08);
+          position: relative;
+          overflow: hidden;
         }
 
-        .arrow-line {
-          stroke-dasharray: 20 42;
-          stroke-dashoffset: -10;
-          animation: arrowFlow 2.4s ease-in-out infinite;
-        }
-
-        .arrow-tip {
-          opacity: 0.5;
-          animation: arrowTipPulse 2.4s ease-in-out infinite;
-        }
-
-        @keyframes arrowFlow {
-          0% {
-            stroke-dashoffset: 30;
-            opacity: 0;
-          }
-          30% {
-            opacity: 0.6;
-          }
-          70% {
-            opacity: 0.6;
-          }
-          100% {
-            stroke-dashoffset: -20;
-            opacity: 0;
-          }
-        }
-
-        @keyframes arrowTipPulse {
-          0%,
-          100% {
-            opacity: 0.2;
-          }
-          40%,
-          60% {
-            opacity: 0.6;
-          }
-        }
-
-        .hero-scroll-label {
-          font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          margin-top: 0rem;
+        .hero-scroll-line-pulse {
+          position: absolute;
+          top: -20px;
+          left: 0;
+          width: 100%;
+          height: 20px;
           background: linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.3) 0%,
-            rgba(255, 255, 255, 0.3) 35%,
-            rgba(255, 255, 255, 0.9) 50%,
-            rgba(255, 255, 255, 0.3) 65%,
-            rgba(255, 255, 255, 0.3) 100%
+            to bottom,
+            rgba(255, 255, 255, 0),
+            rgba(255, 255, 255, 0.6),
+            rgba(255, 255, 255, 0)
           );
-          background-size: 200% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: textSweep 3s ease-in-out infinite;
+          animation: linePulse 2s ease-in-out infinite;
         }
 
-        @keyframes textSweep {
+        @keyframes linePulse {
           0% {
-            background-position: 200% 0;
+            top: -20px;
+            opacity: 0;
+          }
+          20% {
+            opacity: 1;
+          }
+          80% {
+            opacity: 1;
           }
           100% {
-            background-position: -200% 0;
+            top: 48px;
+            opacity: 0;
           }
         }
 
-        /* Scroll Indicator */
+        /* Scroll Indicator (right side) */
         .scroll-cue {
           position: absolute;
           right: 2rem;

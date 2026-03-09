@@ -686,7 +686,7 @@ const MountainSection: React.FC = () => {
   }, []);
 
   return (
-    <section ref={containerRef} className="mountain-section">
+    <section ref={containerRef} id="journey" className="mountain-section">
       <div className="mountain-canvas-container">
         <MountainCanvas scrollProgress={scrollProgress} />
       </div>
@@ -917,16 +917,104 @@ const MountainSection: React.FC = () => {
 
         @media (max-width: 768px) {
           .mountain-header {
-            left: 2rem;
-            right: 2rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            top: 8vh;
+          }
+
+          .header-title {
+            font-size: clamp(1.5rem, 6vw, 2rem);
+          }
+
+          .header-description {
+            font-size: 0.875rem;
+            line-height: 1.6;
           }
 
           .scroll-indicator {
-            right: 1.5rem;
+            right: 1rem;
+            top: 1.5rem;
+            transform: none;
+            flex-direction: row;
+            gap: 0.75rem;
+          }
+
+          .altitude-display {
+            flex-direction: row;
+            gap: 0.4rem;
+            align-items: baseline;
+          }
+
+          .altitude-label {
+            font-size: max(0.7rem, 12px);
+          }
+
+          .altitude-value {
+            font-size: max(0.875rem, 12px);
+          }
+
+          .progress-bar {
+            display: none;
           }
 
           .journey-markers {
-            display: none;
+            display: flex;
+            flex-direction: row;
+            position: absolute;
+            right: auto;
+            left: 50%;
+            top: auto;
+            bottom: 2.5rem;
+            transform: translateX(-50%);
+            gap: 0;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 0.6rem 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+          }
+
+          .marker {
+            flex-direction: column;
+            gap: 0.4rem;
+            padding: 0.25rem 0.75rem;
+            min-width: 72px;
+            min-height: 44px;
+            justify-content: center;
+          }
+
+          .marker::before {
+            width: 6px;
+            height: 6px;
+            order: -1;
+          }
+
+          .marker.active::before {
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6),
+                        0 0 16px rgba(255, 255, 255, 0.3);
+          }
+
+          .marker-label {
+            font-size: max(0.75rem, 12px);
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+          }
+
+          .marker + .marker {
+            position: relative;
+          }
+
+          .marker + .marker::after {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.15);
           }
         }
       `}</style>

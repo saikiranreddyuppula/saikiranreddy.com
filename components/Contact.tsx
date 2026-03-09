@@ -1,11 +1,24 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import ChicagoSkyline from "./ChicagoSkyline";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const HEADLINE_WORDS = [
+  { text: "Let's", accent: false },
+  { text: "build", accent: false },
+  { text: "something", accent: false },
+  { text: "extraordinary", accent: true },
+];
 
 const Contact = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
+  const emailBtnRef = useRef<HTMLAnchorElement>(null);
+  const backToTopRef = useRef<HTMLAnchorElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
+  // ── Intersection Observer to trigger reveal ──
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -14,7 +27,7 @@ const Contact = () => {
           observer.disconnect();
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.15 }
     );
 
     if (sectionRef.current) {
@@ -24,22 +37,49 @@ const Contact = () => {
     return () => observer.disconnect();
   }, []);
 
+  // ── Main entrance animation ──
   useEffect(() => {
     if (!isVisible || !sectionRef.current) return;
 
     const ctx = gsap.context(() => {
+      // 1. Label reveal
       gsap.fromTo(
         ".contact-reveal",
-        { y: 60, opacity: 0 },
+        { y: 40, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 1,
+          duration: 0.8,
           ease: "power3.out",
-          stagger: 0.15,
+          stagger: 0.12,
         }
       );
 
+      // 2. Headline word-by-word waterfall reveal
+      const words = gsap.utils.toArray<HTMLElement>(".headline-word");
+      words.forEach((word, i) => {
+        const inner = word.querySelector(".headline-word-inner");
+        if (!inner) return;
+
+        gsap.fromTo(
+          inner,
+          {
+            y: "110%",
+            rotateX: 25,
+            opacity: 0,
+          },
+          {
+            y: "0%",
+            rotateX: 0,
+            opacity: 1,
+            duration: 0.9,
+            delay: 0.3 + i * 0.12,
+            ease: "power4.out",
+          }
+        );
+      });
+
+      // 3. Divider line
       gsap.fromTo(
         ".contact-line",
         { scaleX: 0 },
@@ -47,13 +87,178 @@ const Contact = () => {
           scaleX: 1,
           duration: 1.5,
           ease: "power3.inOut",
-          delay: 0.3,
+          delay: 0.7,
+        }
+      );
+
+      // 4. CTA shimmer entrance
+      gsap.fromTo(
+        ".contact-cta",
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: "power3.out",
+          delay: 0.9,
+        }
+      );
+
+      // 5. Tagline
+      gsap.fromTo(
+        ".contact-tagline",
+        { y: 20, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: "power3.out",
+          delay: 1.1,
+        }
+      );
+
+      // 6. Footer staggered entrance
+      const footerItems = gsap.utils.toArray<HTMLElement>(".footer-stagger");
+      gsap.fromTo(
+        footerItems,
+        { y: 20, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.1,
+          delay: 1.2,
         }
       );
     }, sectionRef);
 
     return () => ctx.revert();
   }, [isVisible]);
+
+  // ── Magnetic button effect for email CTA ──
+  useEffect(() => {
+    const btn = emailBtnRef.current;
+    if (!btn) return;
+
+    const magnetStrength = 0.35;
+    const magnetRadius = 120; // px radius of magnetic pull
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = btn.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const distX = e.clientX - centerX;
+      const distY = e.clientY - centerY;
+      const distance = Math.sqrt(distX * distX + distY * distY);
+
+      if (distance < magnetRadius) {
+        const pullX = distX * magnetStrength;
+        const pullY = distY * magnetStrength;
+
+        gsap.to(btn, {
+          x: pullX,
+          y: pullY,
+          duration: 0.4,
+          ease: "power2.out",
+        });
+      } else {
+        gsap.to(btn, {
+          x: 0,
+          y: 0,
+          duration: 0.6,
+          ease: "elastic.out(1, 0.4)",
+        });
+      }
+    };
+
+    const onMouseLeave = () => {
+      gsap.to(btn, {
+        x: 0,
+        y: 0,
+        duration: 0.6,
+        ease: "elastic.out(1, 0.4)",
+      });
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    btn.addEventListener("mouseleave", onMouseLeave);
+
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      btn.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
+
+  // ── Email button hover shimmer ──
+  const onEmailEnter = useCallback(() => {
+    const btn = emailBtnRef.current;
+    if (!btn) return;
+
+    const shimmer = btn.querySelector(".email-shimmer") as HTMLElement;
+    if (shimmer) {
+      gsap.fromTo(
+        shimmer,
+        { x: "-100%", opacity: 0.6 },
+        {
+          x: "200%",
+          opacity: 0,
+          duration: 0.7,
+          ease: "power2.out",
+        }
+      );
+    }
+
+    // Arrow fluid animation
+    const arrow = btn.querySelector(".email-arrow");
+    if (arrow) {
+      gsap.to(arrow, {
+        x: 8,
+        scale: 1.2,
+        duration: 0.4,
+        ease: "back.out(2)",
+      });
+    }
+  }, []);
+
+  const onEmailLeave = useCallback(() => {
+    const btn = emailBtnRef.current;
+    if (!btn) return;
+
+    const arrow = btn.querySelector(".email-arrow");
+    if (arrow) {
+      gsap.to(arrow, {
+        x: 0,
+        scale: 1,
+        duration: 0.4,
+        ease: "power2.out",
+      });
+    }
+  }, []);
+
+  // ── Back to Top playful animation ──
+  const onBackToTopEnter = useCallback(() => {
+    const btn = backToTopRef.current;
+    if (!btn) return;
+
+    const arrow = btn.querySelector(".top-arrow");
+    if (arrow) {
+      gsap.to(arrow, {
+        y: -6,
+        scale: 1.3,
+        duration: 0.3,
+        ease: "power2.out",
+        yoyo: true,
+        repeat: 1,
+      });
+    }
+  }, []);
+
+  const onBackToTopClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const socialLinks = [
     { name: "LinkedIn", url: "https://linkedin.com" },
@@ -64,6 +269,7 @@ const Contact = () => {
   return (
     <section
       ref={sectionRef}
+      id="contact"
       className={`contact-section ${isVisible ? "is-visible" : ""}`}
     >
       <div className="contact-container">
@@ -78,55 +284,78 @@ const Contact = () => {
 
         {/* Main Content */}
         <div className="contact-main">
-          <h2 className="contact-headline contact-reveal">
-            Let's build something
-            <br />
-            <span className="text-accent">extraordinary</span>.
-          </h2>
+          <div className="contact-headline-wrapper">
+            <div className="contact-light-motif" aria-hidden="true" />
+            <h2 className="contact-headline">
+              {HEADLINE_WORDS.map((word, i) => (
+                <span key={i} className="headline-word">
+                  <span
+                    className={`headline-word-inner ${
+                      word.accent ? "text-accent" : ""
+                    }`}
+                  >
+                    {word.text}
+                    {word.accent ? "." : ""}
+                  </span>
+                </span>
+              ))}
+            </h2>
+          </div>
 
           <div className="contact-line"></div>
 
-          <div className="contact-cta contact-reveal">
+          <div className="contact-cta">
             <a
+              ref={emailBtnRef}
               href="mailto:hello@saikiranreddy.com"
               className="email-link interactive"
+              onMouseEnter={onEmailEnter}
+              onMouseLeave={onEmailLeave}
             >
+              <span className="email-shimmer"></span>
+              <span className="email-bg"></span>
               <span className="email-text">hello@saikiranreddy.com</span>
-              <span className="email-arrow">→</span>
+              <span className="email-arrow">&rarr;</span>
             </a>
           </div>
 
-          <p className="contact-tagline contact-reveal">
+          <p className="contact-tagline">
             Available for full-time positions, consulting, and select projects.
           </p>
         </div>
 
         {/* Footer */}
         <footer className="contact-footer">
-          <div className="footer-left contact-reveal">
+          <div className="footer-left footer-stagger">
             <span className="footer-copyright">
-              © {new Date().getFullYear()} Sai Kiran Reddy
+              &copy; {new Date().getFullYear()} Sai Kiran Reddy
             </span>
           </div>
 
-          <nav className="footer-nav contact-reveal">
+          <nav className="footer-nav">
             {socialLinks.map((link, i) => (
               <a
                 key={i}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="footer-link interactive"
+                className="footer-link interactive footer-stagger"
               >
                 {link.name}
               </a>
             ))}
           </nav>
 
-          <div className="footer-right contact-reveal">
-            <a href="#" className="back-to-top interactive">
+          <div className="footer-right footer-stagger">
+            <a
+              ref={backToTopRef}
+              href="#"
+              className="back-to-top interactive"
+              onClick={onBackToTopClick}
+              onMouseEnter={onBackToTopEnter}
+            >
               <span>Back to Top</span>
-              <span className="top-arrow">↑</span>
+              <span className="top-arrow">&uarr;</span>
             </a>
           </div>
         </footer>
@@ -202,14 +431,61 @@ const Contact = () => {
           padding: 4rem 0;
         }
 
+        /* Headline wrapper with light motif */
+        .contact-headline-wrapper {
+          position: relative;
+        }
+
+        .contact-light-motif {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 600px;
+          height: 400px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(255, 250, 240, 0.07) 0%,
+            rgba(255, 255, 255, 0.02) 40%,
+            transparent 70%
+          );
+          pointer-events: none;
+          animation: contactGlowPulse 6s ease-in-out infinite;
+          z-index: 0;
+        }
+
+        @keyframes contactGlowPulse {
+          0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+        }
+
+        /* Headline with word-by-word reveal */
         .contact-headline {
+          position: relative;
+          z-index: 1;
           font-family: var(--font-serif);
           font-size: clamp(3rem, 8vw, 7rem);
           font-weight: 300;
-          line-height: 1.1;
+          line-height: 1.15;
           color: #fff;
           margin: 0 0 3rem;
-          opacity: 0;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0 0.35em;
+          perspective: 600px;
+        }
+
+        .headline-word {
+          display: inline-block;
+          overflow: hidden;
+          vertical-align: top;
+        }
+
+        .headline-word-inner {
+          display: inline-block;
+          will-change: transform, opacity;
+          transform-origin: bottom center;
         }
 
         .text-accent {
@@ -220,12 +496,18 @@ const Contact = () => {
         .contact-line {
           width: 100px;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent
+          );
           margin-bottom: 3rem;
           transform-origin: center;
           transform: scaleX(0);
         }
 
+        /* CTA */
         .contact-cta {
           margin-bottom: 2rem;
           opacity: 0;
@@ -237,26 +519,47 @@ const Contact = () => {
           gap: 1rem;
           padding: 1.25rem 2.5rem;
           border: 1px solid rgba(255, 255, 255, 0.2);
-          transition: all 0.4s ease;
+          transition: border-color 0.4s ease, box-shadow 0.4s ease;
           position: relative;
           overflow: hidden;
+          will-change: transform;
         }
 
-        .email-link::before {
-          content: '';
+        /* Sliding background fill */
+        .email-bg {
           position: absolute;
           inset: 0;
           background: #fff;
           transform: translateX(-101%);
-          transition: transform 0.4s ease;
+          transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+          z-index: 0;
         }
 
-        .email-link:hover::before {
+        .email-link:hover .email-bg {
           transform: translateX(0);
+        }
+
+        /* Shimmer highlight */
+        .email-shimmer {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 40%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent
+          );
+          transform: translateX(-100%);
+          z-index: 1;
+          pointer-events: none;
         }
 
         .email-link:hover {
           border-color: #fff;
+          box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
         }
 
         .email-text {
@@ -265,7 +568,7 @@ const Contact = () => {
           letter-spacing: 0.05em;
           color: #fff;
           position: relative;
-          z-index: 1;
+          z-index: 2;
           transition: color 0.4s;
         }
 
@@ -277,13 +580,14 @@ const Contact = () => {
           font-size: 1.25rem;
           color: rgba(255, 255, 255, 0.6);
           position: relative;
-          z-index: 1;
-          transition: all 0.4s ease;
+          z-index: 2;
+          transition: color 0.4s ease;
+          display: inline-block;
+          will-change: transform;
         }
 
         .email-link:hover .email-arrow {
           color: #000;
-          transform: translateX(4px);
         }
 
         .contact-tagline {
@@ -317,7 +621,6 @@ const Contact = () => {
         .footer-nav {
           display: flex;
           gap: 2.5rem;
-          opacity: 0;
         }
 
         .footer-link {
@@ -328,10 +631,11 @@ const Contact = () => {
           color: rgba(255, 255, 255, 0.5);
           transition: color 0.3s;
           position: relative;
+          opacity: 0;
         }
 
         .footer-link::after {
-          content: '';
+          content: "";
           position: absolute;
           bottom: -4px;
           left: 0;
@@ -373,11 +677,9 @@ const Contact = () => {
         }
 
         .top-arrow {
-          transition: transform 0.3s ease;
-        }
-
-        .back-to-top:hover .top-arrow {
-          transform: translateY(-4px);
+          display: inline-block;
+          will-change: transform;
+          transition: color 0.3s;
         }
 
         @media (max-width: 1024px) {
@@ -391,6 +693,10 @@ const Contact = () => {
         @media (max-width: 768px) {
           .contact-container {
             padding: 6rem 2rem 2rem;
+          }
+
+          .contact-headline {
+            font-size: clamp(2.5rem, 10vw, 4rem);
           }
 
           .footer-nav {

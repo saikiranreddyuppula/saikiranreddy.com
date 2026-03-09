@@ -10,6 +10,7 @@ import Industries from "../components/Industries";
 import MountainSection from "../components/MountainScene";
 import Contact from "../components/Contact";
 import CustomCursor from "../components/CustomCursor";
+import Navbar from "../components/Navbar";
 import Loader from "../components/Loader";
 
 const Home: NextPage = () => {
@@ -76,19 +77,22 @@ const Home: NextPage = () => {
       {/* Main Content */}
       <CustomCursor />
 
+      {/* Transition overlay — subtle dark fade instead of white flash */}
       <div
         className="hero-flash"
         style={{
           position: "fixed",
           inset: 0,
-          background: "#fff",
+          background: "#000",
           opacity: 0,
           zIndex: 50,
           pointerEvents: "none",
+          visibility: "hidden",
         }}
       />
       <div className={`app-content ${loading ? "app-content--hidden" : ""}`}>
         <SmoothScroll>
+          <Navbar />
           <main>
             <Hero />
             <About />
