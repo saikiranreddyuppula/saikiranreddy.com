@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
@@ -8,331 +8,341 @@ const industries = [
     {
         name: "Ecommerce",
         number: "01",
-        description: "Scalable platforms that handle millions of transactions",
+        description: "Scalable platforms that handle millions of transactions with real-time inventory, dynamic pricing, and seamless checkout experiences.",
+        tags: ["Payments", "Inventory", "Microservices"],
     },
     {
         name: "Cyber Security",
         number: "02",
-        description: "Zero-trust architectures and threat detection systems",
+        description: "Zero-trust architectures and threat detection systems that protect critical infrastructure at scale.",
+        tags: ["Zero Trust", "Threat Detection", "Compliance"],
     },
     {
         name: "Healthcare",
         number: "03",
-        description: "HIPAA-compliant systems for patient data management",
+        description: "HIPAA-compliant systems for patient data management, telemedicine platforms, and clinical workflow automation.",
+        tags: ["HIPAA", "EHR Systems", "Telemedicine"],
     },
     {
         name: "Hospitality",
         number: "04",
-        description: "Real-time booking engines and guest experiences",
+        description: "Real-time booking engines, guest experience platforms, and operational systems that delight at every touchpoint.",
+        tags: ["Booking Engines", "Guest Experience", "PMS"],
     },
     {
         name: "Artificial Intelligence",
         number: "05",
-        description: "ML pipelines and intelligent automation systems",
+        description: "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
+        tags: ["ML Pipelines", "NLP", "Computer Vision"],
     },
     {
         name: "Manufacturing",
         number: "06",
-        description: "IoT integration and supply chain optimization",
+        description: "IoT integration, supply chain optimization, and predictive maintenance systems for smart factories.",
+        tags: ["IoT", "Supply Chain", "Predictive Maintenance"],
     }
 ];
 
-interface CardProps {
+interface RowProps {
     industry: typeof industries[0];
     index: number;
-    isActive: boolean;
-    onMouseEnter: () => void;
-    onMouseLeave: () => void;
+    isExpanded: boolean;
+    onEnter: () => void;
+    onLeave: () => void;
 }
 
-const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }: CardProps) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const bgNumberRef = useRef<HTMLSpanElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
+const IndustryRow = ({ industry, index, isExpanded, onEnter, onLeave }: RowProps) => {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const descRef = useRef<HTMLDivElement>(null);
     const lineRef = useRef<HTMLDivElement>(null);
-    const borderRef = useRef<HTMLDivElement>(null);
+    const tagsRef = useRef<HTMLDivElement>(null);
     const glowRef = useRef<HTMLDivElement>(null);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const breatheAnimRef = useRef<gsap.core.Tween | null>(null);
+    const [mouseX, setMouseX] = useState(0);
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        setMousePosition({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        });
-    };
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!rowRef.current) return;
+        const rect = rowRef.current.getBoundingClientRect();
+        setMouseX(((e.clientX - rect.left) / rect.width) * 100);
+    }, []);
 
-    // Active state animations - breathing glow, line draw, bg number spring
     useEffect(() => {
-        if (!cardRef.current) return;
-        const border = borderRef.current;
+        const desc = descRef.current;
         const line = lineRef.current;
-        const bgNum = bgNumberRef.current;
+        const tags = tagsRef.current;
         const glow = glowRef.current;
+        if (!desc || !line || !tags || !glow) return;
 
-        if (isActive) {
-            // Breathing border glow
-            if (border) {
-                breatheAnimRef.current = gsap.to(border, {
-                    borderColor: 'rgba(255, 255, 255, 0.45)',
-                    boxShadow: '0 0 30px rgba(255, 255, 255, 0.08), inset 0 0 30px rgba(255, 255, 255, 0.03)',
-                    duration: 1.2,
-                    repeat: -1,
-                    yoyo: true,
-                    ease: 'sine.inOut',
-                });
-            }
-
-            // Line draw animation
-            if (line) {
-                gsap.fromTo(line,
-                    { width: 0, opacity: 1 },
-                    { width: 80, duration: 0.6, ease: 'power2.out' }
-                );
-            }
-
-            // Background number spring scale
-            if (bgNum) {
-                gsap.to(bgNum, {
-                    scale: 1.15,
-                    x: -15,
-                    y: -15,
-                    duration: 0.8,
-                    ease: 'elastic.out(1, 0.5)',
-                    overwrite: true,
-                });
-            }
-
-            // Glow fade in
-            if (glow) {
-                gsap.to(glow, { opacity: 1, duration: 0.3 });
-            }
+        if (isExpanded) {
+            gsap.to(desc, {
+                height: 'auto',
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                ease: 'power3.out',
+            });
+            gsap.to(tags, {
+                height: 'auto',
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                delay: 0.1,
+                ease: 'power3.out',
+            });
+            gsap.to(line, {
+                scaleX: 1,
+                duration: 0.8,
+                ease: 'power3.inOut',
+            });
+            gsap.to(glow, {
+                opacity: 1,
+                duration: 0.4,
+            });
         } else {
-            // Clean up breathing animation
-            if (breatheAnimRef.current) {
-                breatheAnimRef.current.kill();
-                breatheAnimRef.current = null;
-            }
-
-            if (border) {
-                gsap.to(border, {
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    boxShadow: 'none',
-                    duration: 0.4,
-                    overwrite: true,
-                });
-            }
-
-            if (line) {
-                gsap.to(line, { width: 40, duration: 0.4, ease: 'power2.out' });
-            }
-
-            if (bgNum) {
-                gsap.to(bgNum, {
-                    scale: 1,
-                    x: 0,
-                    y: 0,
-                    duration: 0.6,
-                    ease: 'power3.out',
-                    overwrite: true,
-                });
-            }
-
-            if (glow) {
-                gsap.to(glow, { opacity: 0, duration: 0.3 });
-            }
+            gsap.to(desc, {
+                height: 0,
+                opacity: 0,
+                y: 10,
+                duration: 0.4,
+                ease: 'power2.inOut',
+            });
+            gsap.to(tags, {
+                height: 0,
+                opacity: 0,
+                y: 10,
+                duration: 0.3,
+                ease: 'power2.inOut',
+            });
+            gsap.to(line, {
+                scaleX: 0,
+                duration: 0.5,
+                ease: 'power2.inOut',
+            });
+            gsap.to(glow, {
+                opacity: 0,
+                duration: 0.3,
+            });
         }
-
-        return () => {
-            if (breatheAnimRef.current) {
-                breatheAnimRef.current.kill();
-                breatheAnimRef.current = null;
-            }
-        };
-    }, [isActive]);
+    }, [isExpanded]);
 
     return (
         <div
-            ref={cardRef}
-            className={`industry-card interactive ${isActive ? 'is-active' : ''}`}
-            data-card-index={index}
+            ref={rowRef}
+            className={`industry-row interactive ${isExpanded ? 'is-expanded' : ''}`}
+            onMouseEnter={onEnter}
+            onMouseLeave={onLeave}
             onMouseMove={handleMouseMove}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            style={{
-                '--mouse-x': `${mousePosition.x}px`,
-                '--mouse-y': `${mousePosition.y}px`,
-            } as React.CSSProperties}
+            style={{ '--mouse-x': `${mouseX}%` } as React.CSSProperties}
         >
-            <div className="card-bg"></div>
-            <div ref={glowRef} className="card-glow"></div>
-            <div className="card-light-ray" aria-hidden="true"></div>
-            <div ref={borderRef} className="card-border"></div>
+            {/* Hover glow that follows mouse horizontally */}
+            <div ref={glowRef} className="row-glow" />
 
-            <div ref={contentRef} className="card-content">
-                <div className="card-header">
-                    <span className="card-number card-parallax-item" data-parallax-speed="0.3">{industry.number}</span>
+            {/* Top border accent line */}
+            <div ref={lineRef} className="row-accent-line" />
+
+            <div className="row-inner">
+                <div className="row-main">
+                    <span className="row-number">{industry.number}</span>
+                    <h3 className="row-name">{industry.name}</h3>
+                    <span className="row-expand-indicator">
+                        <span className={`expand-line expand-h ${isExpanded ? 'active' : ''}`} />
+                        <span className={`expand-line expand-v ${isExpanded ? 'active' : ''}`} />
+                    </span>
                 </div>
 
-                <h3 className="card-title card-parallax-item" data-parallax-speed="0.15">{industry.name}</h3>
+                <div ref={descRef} className="row-description-wrap">
+                    <p className="row-description">{industry.description}</p>
+                </div>
 
-                <p className="card-description card-parallax-item" data-parallax-speed="0.08">{industry.description}</p>
-
-                <div ref={lineRef} className="card-line card-parallax-item" data-parallax-speed="0.05"></div>
+                <div ref={tagsRef} className="row-tags-wrap">
+                    <div className="row-tags">
+                        {industry.tags.map((tag, i) => (
+                            <span key={i} className="row-tag">{tag}</span>
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            <span ref={bgNumberRef} className="card-bg-number" data-parallax-speed="0.6">{industry.number}</span>
-
             <style jsx>{`
-                .industry-card {
-                    flex-shrink: 0;
-                    width: clamp(300px, 28vw, 400px);
-                    height: 50vh;
-                    min-height: 380px;
+                .industry-row {
                     position: relative;
-                    display: flex;
-                    flex-direction: column;
-                    padding: 2.5rem;
-                    overflow: hidden;
                     cursor: pointer;
-                    will-change: transform, opacity;
-                }
-
-                .card-bg {
-                    position: absolute;
-                    inset: 0;
-                    background: linear-gradient(
-                        135deg,
-                        rgba(20, 20, 20, 0.9) 0%,
-                        rgba(10, 10, 10, 0.95) 100%
-                    );
-                    backdrop-filter: blur(20px);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
                     transition: background 0.4s ease;
+                    overflow: hidden;
                 }
 
-                .industry-card.is-active .card-bg {
-                    background: linear-gradient(
-                        135deg,
-                        rgba(40, 40, 40, 0.9) 0%,
-                        rgba(15, 15, 15, 0.95) 100%
-                    );
+                .industry-row:first-child {
+                    border-top: 1px solid rgba(255, 255, 255, 0.07);
                 }
 
-                .card-glow {
+                .row-glow {
                     position: absolute;
                     inset: 0;
                     background: radial-gradient(
-                        500px circle at var(--mouse-x) var(--mouse-y),
-                        rgba(255, 255, 255, 0.06),
-                        transparent 40%
+                        600px ellipse at var(--mouse-x) 50%,
+                        rgba(255, 255, 255, 0.03),
+                        transparent 70%
                     );
                     opacity: 0;
                     pointer-events: none;
+                    z-index: 0;
                 }
 
-                .card-light-ray {
+                .row-accent-line {
                     position: absolute;
                     top: 0;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 60%;
-                    height: 120px;
-                    background: linear-gradient(
-                        180deg,
-                        rgba(255, 250, 240, 0.06) 0%,
-                        transparent 100%
-                    );
-                    pointer-events: none;
-                    opacity: 0;
-                    transition: opacity 0.6s ease;
-                    z-index: 1;
-                }
-
-                .is-active .card-light-ray {
-                    opacity: 1;
-                }
-
-                .card-border {
-                    position: absolute;
-                    inset: 0;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    pointer-events: none;
-                }
-
-                .card-content {
-                    position: relative;
+                    left: 0;
+                    right: 0;
+                    height: 1px;
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+                    transform: scaleX(0);
+                    transform-origin: center;
                     z-index: 2;
-                    height: 100%;
-                    display: flex;
-                    flex-direction: column;
                 }
 
-                .card-header {
-                    display: flex;
-                    justify-content: flex-end;
-                    align-items: flex-start;
-                    margin-bottom: auto;
+                .row-inner {
+                    position: relative;
+                    z-index: 1;
+                    padding: 2.5rem 0;
                 }
 
-                .card-number {
+                .row-main {
+                    display: flex;
+                    align-items: center;
+                    gap: 2rem;
+                }
+
+                .row-number {
                     font-family: var(--font-mono);
                     font-size: 0.75rem;
-                    color: rgba(255, 255, 255, 0.4);
+                    color: rgba(255, 255, 255, 0.3);
                     letter-spacing: 0.1em;
+                    min-width: 2rem;
+                    transition: color 0.4s ease;
                 }
 
-                .card-title {
-                    font-family: var(--font-display);
-                    font-size: clamp(1.5rem, 2.5vw, 2rem);
-                    font-weight: 700;
+                .is-expanded .row-number {
+                    color: rgba(255, 255, 255, 0.7);
+                }
+
+                .row-name {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(2rem, 4.5vw, 4rem);
+                    font-weight: 300;
+                    color: rgba(255, 255, 255, 0.5);
+                    margin: 0;
+                    flex: 1;
+                    line-height: 1.2;
+                    transition: color 0.4s ease, letter-spacing 0.4s ease;
+                    letter-spacing: -0.01em;
+                }
+
+                .is-expanded .row-name {
                     color: #fff;
-                    margin: 0 0 1rem;
-                    letter-spacing: -0.02em;
-                    transition: color 0.3s;
+                    letter-spacing: 0.02em;
                 }
 
-                .card-description {
-                    font-family: var(--font-serif);
-                    font-size: 0.95rem;
-                    font-style: italic;
-                    line-height: 1.6;
-                    color: rgba(255, 255, 255, 0.4);
-                    margin: 0 0 2rem;
-                    transition: color 0.3s;
+                .row-expand-indicator {
+                    position: relative;
+                    width: 16px;
+                    height: 16px;
+                    flex-shrink: 0;
                 }
 
-                .industry-card.is-active .card-description {
-                    color: rgba(255, 255, 255, 0.6);
-                }
-
-                .card-line {
-                    height: 1px;
-                    width: 40px;
-                    background: rgba(255, 255, 255, 0.4);
-                }
-
-                .industry-card.is-active .card-line {
-                    background: #fff;
-                }
-
-                .card-bg-number {
+                .expand-line {
                     position: absolute;
-                    bottom: -2rem;
-                    right: -1rem;
-                    font-family: var(--font-display);
-                    font-size: 10rem;
-                    font-weight: 700;
-                    color: transparent;
-                    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
-                    line-height: 1;
-                    pointer-events: none;
-                    will-change: transform;
+                    background: rgba(255, 255, 255, 0.4);
+                    transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1), background 0.4s ease;
                 }
 
-                .industry-card.is-active .card-bg-number {
-                    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+                .expand-h {
+                    top: 50%;
+                    left: 0;
+                    width: 100%;
+                    height: 1px;
+                    transform: translateY(-50%);
+                }
+
+                .expand-v {
+                    top: 0;
+                    left: 50%;
+                    width: 1px;
+                    height: 100%;
+                    transform: translateX(-50%) scaleY(1);
+                }
+
+                .expand-v.active {
+                    transform: translateX(-50%) scaleY(0);
+                }
+
+                .is-expanded .expand-line {
+                    background: rgba(255, 255, 255, 0.7);
+                }
+
+                .row-description-wrap {
+                    height: 0;
+                    opacity: 0;
+                    overflow: hidden;
+                    transform: translateY(10px);
+                }
+
+                .row-description {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(1rem, 1.3vw, 1.15rem);
+                    font-style: italic;
+                    line-height: 1.7;
+                    color: rgba(255, 255, 255, 0.5);
+                    margin: 0;
+                    padding: 1.5rem 0 0 4rem;
+                    max-width: 600px;
+                }
+
+                .row-tags-wrap {
+                    height: 0;
+                    opacity: 0;
+                    overflow: hidden;
+                    transform: translateY(10px);
+                }
+
+                .row-tags {
+                    display: flex;
+                    gap: 0.75rem;
+                    padding: 1.25rem 0 0.5rem 4rem;
+                    flex-wrap: wrap;
+                }
+
+                .row-tag {
+                    font-family: var(--font-mono);
+                    font-size: 0.65rem;
+                    letter-spacing: 0.12em;
+                    text-transform: uppercase;
+                    color: rgba(255, 255, 255, 0.35);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 0.4rem 0.85rem;
+                    transition: border-color 0.3s ease, color 0.3s ease;
+                }
+
+                .is-expanded .row-tag {
+                    border-color: rgba(255, 255, 255, 0.2);
+                    color: rgba(255, 255, 255, 0.5);
+                }
+
+                @media (max-width: 768px) {
+                    .row-inner {
+                        padding: 1.75rem 0;
+                    }
+
+                    .row-main {
+                        gap: 1.25rem;
+                    }
+
+                    .row-description {
+                        padding-left: 3.25rem;
+                    }
+
+                    .row-tags {
+                        padding-left: 3.25rem;
+                    }
                 }
             `}</style>
         </div>
@@ -341,16 +351,17 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
 
 const Industries = () => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const horizontalRef = useRef<HTMLDivElement>(null);
-    const headerRef = useRef<HTMLDivElement>(null);
-    const [activeIndex, setActiveIndex] = useState<number | null>(null);
-    const [isHeaderVisible, setIsHeaderVisible] = useState(false);
+    const listRef = useRef<HTMLDivElement>(null);
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
 
+    // Intersection observer for entrance
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
-                    setIsHeaderVisible(true);
+                    setIsVisible(true);
+                    observer.disconnect();
                 }
             },
             { threshold: 0.1 }
@@ -363,243 +374,185 @@ const Industries = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Entrance animations
     useEffect(() => {
-        const horizontal = horizontalRef.current;
-        const container = containerRef.current;
-        const header = headerRef.current;
-        if (!horizontal || !container) return;
-
-        const scrollWidth = horizontal.scrollWidth - window.innerWidth;
+        if (!isVisible || !containerRef.current) return;
 
         const ctx = gsap.context(() => {
-            // --- Main horizontal scroll ---
-            gsap.to(horizontal, {
-                x: -scrollWidth,
+            // Label entrance
+            gsap.fromTo(
+                '.industries-label',
+                { opacity: 0, x: -20 },
+                { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }
+            );
+
+            // Title word-by-word reveal
+            const titleWords = gsap.utils.toArray<HTMLElement>('.title-word');
+            titleWords.forEach((word, i) => {
+                const inner = word.querySelector('.title-word-inner');
+                if (!inner) return;
+                gsap.fromTo(
+                    inner,
+                    { y: '110%', rotateX: 20, opacity: 0 },
+                    {
+                        y: '0%',
+                        rotateX: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        delay: 0.2 + i * 0.08,
+                        ease: 'power4.out',
+                    }
+                );
+            });
+
+            // Rows stagger entrance
+            const rows = gsap.utils.toArray<HTMLElement>('.industry-row');
+            gsap.fromTo(
+                rows,
+                { opacity: 0, y: 40 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.7,
+                    stagger: 0.08,
+                    delay: 0.5,
+                    ease: 'power3.out',
+                }
+            );
+
+            // Counter reveal
+            gsap.fromTo(
+                '.industries-counter',
+                { opacity: 0, y: 20 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    delay: 1.0,
+                    ease: 'power2.out',
+                }
+            );
+        }, containerRef);
+
+        return () => ctx.revert();
+    }, [isVisible]);
+
+    // Parallax scroll effect on the title
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const ctx = gsap.context(() => {
+            gsap.to('.industries-title', {
+                y: -60,
                 ease: 'none',
                 scrollTrigger: {
-                    trigger: container,
-                    start: 'top top',
-                    end: () => `+=${scrollWidth}`,
+                    trigger: containerRef.current,
+                    start: 'top bottom',
+                    end: 'bottom top',
                     scrub: 1,
-                    pin: true,
-                    anticipatePin: 1,
-                    invalidateOnRefresh: true,
-                    onUpdate: (self) => {
-                        const progress = self.progress;
-                        if (progress > 0.75) {
-                            const fadeProgress = (progress - 0.75) / 0.25;
-                            container.style.opacity = String(1 - fadeProgress * 0.8);
-                        } else {
-                            container.style.opacity = '1';
-                        }
-                    }
-                }
+                },
             });
-
-            const cards = horizontal.querySelectorAll('.industry-card');
-
-            // --- Parallax depth within cards ---
-            // Background numbers and content items move at different rates
-            cards.forEach((card) => {
-                const bgNumber = card.querySelector('.card-bg-number');
-                const parallaxItems = card.querySelectorAll('.card-parallax-item');
-
-                if (bgNumber) {
-                    const speed = parseFloat((bgNumber as HTMLElement).dataset.parallaxSpeed || '0.5');
-                    gsap.to(bgNumber, {
-                        y: () => -80 * speed,
-                        x: () => -40 * speed,
-                        ease: 'none',
-                        scrollTrigger: {
-                            trigger: container,
-                            start: 'top top',
-                            end: () => `+=${scrollWidth}`,
-                            scrub: 1,
-                            invalidateOnRefresh: true,
-                        }
-                    });
-                }
-
-                parallaxItems.forEach((item) => {
-                    const speed = parseFloat((item as HTMLElement).dataset.parallaxSpeed || '0.1');
-                    gsap.to(item, {
-                        y: () => -30 * speed,
-                        ease: 'none',
-                        scrollTrigger: {
-                            trigger: container,
-                            start: 'top top',
-                            end: () => `+=${scrollWidth}`,
-                            scrub: 1,
-                            invalidateOnRefresh: true,
-                        }
-                    });
-                });
-            });
-
-            // --- Header word scatter/dissolve ---
-            if (header) {
-                // Wrap each word in the header title in a span for individual animation
-                const titleEl = header.querySelector('.header-title');
-                if (titleEl) {
-                    const html = titleEl.innerHTML;
-                    // Split by words but preserve <br /> and <span> tags
-                    const processNode = (node: Node): string => {
-                        if (node.nodeType === Node.TEXT_NODE) {
-                            const text = node.textContent || '';
-                            return text.split(/(\s+)/).map(word => {
-                                if (word.trim() === '') return word;
-                                // Random scatter direction
-                                const rx = (Math.random() - 0.5) * 120;
-                                const ry = (Math.random() - 0.5) * 80;
-                                return `<span class="scatter-word" data-rx="${rx}" data-ry="${ry}" style="display:inline-block;will-change:transform,opacity,filter;">${word}</span>`;
-                            }).join('');
-                        } else if (node.nodeType === Node.ELEMENT_NODE) {
-                            const el = node as Element;
-                            if (el.tagName === 'BR') return '<br />';
-                            const children = Array.from(el.childNodes).map(processNode).join('');
-                            // Preserve the element but process its children
-                            const attrs = Array.from(el.attributes).map(a => `${a.name}="${a.value}"`).join(' ');
-                            return `<${el.tagName.toLowerCase()} ${attrs}>${children}</${el.tagName.toLowerCase()}>`;
-                        }
-                        return '';
-                    };
-
-                    // Create a temp container to parse
-                    const temp = document.createElement('div');
-                    temp.innerHTML = html;
-                    titleEl.innerHTML = Array.from(temp.childNodes).map(processNode).join('');
-
-                    // Animate scatter words
-                    const scatterWords = titleEl.querySelectorAll('.scatter-word');
-                    scatterWords.forEach((word) => {
-                        const rx = parseFloat((word as HTMLElement).dataset.rx || '0');
-                        const ry = parseFloat((word as HTMLElement).dataset.ry || '0');
-
-                        gsap.to(word, {
-                            x: rx,
-                            y: ry,
-                            opacity: 0,
-                            filter: 'blur(8px)',
-                            ease: 'power2.in',
-                            scrollTrigger: {
-                                trigger: container,
-                                start: () => `top+=${scrollWidth * 0.2} top`,
-                                end: () => `top+=${scrollWidth * 0.45} top`,
-                                scrub: 1,
-                            }
-                        });
-                    });
-
-                    // Also scatter the label
-                    const labelEl = header.querySelector('.header-label');
-                    if (labelEl) {
-                        gsap.to(labelEl, {
-                            y: -40,
-                            opacity: 0,
-                            filter: 'blur(6px)',
-                            ease: 'power2.in',
-                            scrollTrigger: {
-                                trigger: container,
-                                start: () => `top+=${scrollWidth * 0.15} top`,
-                                end: () => `top+=${scrollWidth * 0.35} top`,
-                                scrub: 1,
-                            }
-                        });
-                    }
-                }
-            }
-        }, container);
+        }, containerRef);
 
         return () => ctx.revert();
     }, []);
 
+    const titleText = "From startups to enterprise, I architect solutions that scale.";
+    const titleWords = titleText.split(' ');
+
     return (
         <section ref={containerRef} id="industries" className="industries-section">
-            <div ref={headerRef} className={`industries-header ${isHeaderVisible ? 'is-visible' : ''}`}>
-                <div className="header-label">
-                    <span className="label-index">02</span>
-                    <span className="label-line"></span>
-                    <span className="label-text">Industries</span>
+            <div className="industries-container">
+                {/* Header */}
+                <div className="industries-header">
+                    <div className="industries-label">
+                        <span className="label-index">02</span>
+                        <span className="label-line"></span>
+                        <span className="label-text">Industries</span>
+                    </div>
+
+                    <h2 className="industries-title">
+                        {titleWords.map((word, i) => (
+                            <span key={i} className="title-word">
+                                <span className={`title-word-inner ${i >= 6 ? 'text-accent' : ''}`}>
+                                    {word}
+                                </span>
+                            </span>
+                        ))}
+                    </h2>
                 </div>
 
-                <h2 className="header-title">
-                    From startups to enterprise,
-                    <br />
-                    <span className="text-accent">I architect solutions that scale.</span>
-                </h2>
-            </div>
-
-            <div ref={horizontalRef} className="industries-scroll">
-                {industries.map((industry, index) => (
-                    <IndustryCard
-                        key={index}
-                        industry={industry}
-                        index={index}
-                        isActive={activeIndex === index}
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onMouseLeave={() => setActiveIndex(null)}
-                    />
-                ))}
-            </div>
-
-            <div className="industries-progress">
-                <div className="progress-track">
-                    <div className="progress-fill"></div>
+                {/* Industry List */}
+                <div ref={listRef} className="industries-list">
+                    {industries.map((industry, index) => (
+                        <IndustryRow
+                            key={index}
+                            industry={industry}
+                            index={index}
+                            isExpanded={expandedIndex === index}
+                            onEnter={() => setExpandedIndex(index)}
+                            onLeave={() => setExpandedIndex(null)}
+                        />
+                    ))}
                 </div>
-                <span className="progress-text">Scroll to explore</span>
+
+                {/* Bottom counter */}
+                <div className="industries-counter">
+                    <span className="counter-label">Domains of expertise</span>
+                    <span className="counter-number">
+                        {expandedIndex !== null
+                            ? `${String(expandedIndex + 1).padStart(2, '0')} / ${String(industries.length).padStart(2, '0')}`
+                            : String(industries.length).padStart(2, '0')
+                        }
+                    </span>
+                </div>
             </div>
 
             <style jsx global>{`
                 .industries-section {
-                    height: 100vh;
-                    overflow: hidden;
-                    background: #000;
                     position: relative;
                     z-index: 1;
-                    perspective: 1200px;
+                    background: #000;
+                    overflow: hidden;
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
                 }
 
-                .pin-spacer {
-                    z-index: 1 !important;
+                .industries-container {
+                    max-width: 1200px;
+                    width: 100%;
+                    margin: 0 auto;
+                    padding: 8rem 4rem 6rem;
                 }
 
+                /* Header */
                 .industries-header {
-                    position: absolute;
-                    top: 10vh;
-                    left: 4rem;
-                    z-index: 10;
-                    max-width: 700px;
-                    opacity: 0;
-                    transform: translateY(30px);
-                    transition: opacity 0.8s ease, transform 0.8s ease;
+                    margin-bottom: 5rem;
                 }
 
-                .industries-header.is-visible {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-
-                .header-label {
+                .industries-label {
                     display: flex;
                     align-items: center;
                     gap: 1.5rem;
-                    margin-bottom: 2rem;
+                    margin-bottom: 2.5rem;
+                    opacity: 0;
                 }
 
-                .label-index {
+                .industries-label .label-index {
                     font-family: var(--font-mono);
                     font-size: 0.75rem;
                     color: #fff;
                     letter-spacing: 0.1em;
                 }
 
-                .label-line {
+                .industries-label .label-line {
                     width: 40px;
                     height: 1px;
                     background: rgba(255, 255, 255, 0.3);
                 }
 
-                .label-text {
+                .industries-label .label-text {
                     font-family: var(--font-mono);
                     font-size: 0.75rem;
                     letter-spacing: 0.2em;
@@ -607,91 +560,85 @@ const Industries = () => {
                     color: rgba(255, 255, 255, 0.5);
                 }
 
-                .header-title {
-                    font-family: var(--font-serif);
+                /* Title */
+                .industries-title {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
                     font-size: clamp(2rem, 4vw, 3rem);
                     font-weight: 300;
                     line-height: 1.3;
                     color: #fff;
                     margin: 0;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0 0.3em;
+                    perspective: 600px;
+                    will-change: transform;
                 }
 
-                .text-accent {
-                    color: rgba(255, 255, 255, 0.6);
+                .title-word {
+                    display: inline-block;
+                    overflow: hidden;
+                    vertical-align: top;
+                }
+
+                .title-word-inner {
+                    display: inline-block;
+                    will-change: transform, opacity;
+                    transform-origin: bottom center;
+                }
+
+                .industries-title .text-accent {
+                    color: rgba(255, 255, 255, 0.5);
                     font-style: italic;
                 }
 
-                .industries-scroll {
-                    display: flex;
-                    height: 100vh;
-                    padding-left: 4rem;
-                    padding-top: 32vh;
-                    gap: 2rem;
-                    will-change: transform;
-                    transform-style: preserve-3d;
+                /* List */
+                .industries-list {
+                    margin-bottom: 4rem;
                 }
 
-                .industries-scroll::after {
-                    content: '';
-                    flex-shrink: 0;
-                    width: 15vw;
-                }
-
-                .industries-progress {
-                    position: absolute;
-                    bottom: 3rem;
-                    left: 4rem;
+                /* Counter */
+                .industries-counter {
                     display: flex;
                     align-items: center;
-                    gap: 1.5rem;
-                    z-index: 10;
+                    justify-content: space-between;
+                    opacity: 0;
+                    padding-top: 2rem;
                 }
 
-                .progress-track {
-                    width: 100px;
-                    height: 1px;
-                    background: rgba(255, 255, 255, 0.15);
-                    position: relative;
-                    overflow: hidden;
-                }
-
-                .progress-fill {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    height: 100%;
-                    width: 30%;
-                    background: rgba(255, 255, 255, 0.6);
-                    animation: progressPulse 2s ease-in-out infinite;
-                }
-
-                @keyframes progressPulse {
-                    0%, 100% { transform: translateX(-100%); }
-                    50% { transform: translateX(300%); }
-                }
-
-                .progress-text {
+                .counter-label {
                     font-family: var(--font-mono);
                     font-size: 0.7rem;
                     letter-spacing: 0.15em;
                     text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.4);
+                    color: rgba(255, 255, 255, 0.3);
+                }
+
+                .counter-number {
+                    font-family: var(--font-mono);
+                    font-size: 0.85rem;
+                    letter-spacing: 0.1em;
+                    color: rgba(255, 255, 255, 0.5);
+                    transition: all 0.3s ease;
+                }
+
+                @media (max-width: 1024px) {
+                    .industries-container {
+                        padding: 6rem 2.5rem 5rem;
+                    }
                 }
 
                 @media (max-width: 768px) {
+                    .industries-container {
+                        padding: 5rem 1.5rem 4rem;
+                    }
+
                     .industries-header {
-                        left: 2rem;
-                        right: 2rem;
+                        margin-bottom: 3rem;
                     }
 
-                    .industries-scroll {
-                        padding-left: 2rem;
-                        padding-top: 35vh;
-                        gap: 1.5rem;
-                    }
-
-                    .industries-progress {
-                        left: 2rem;
+                    .industries-label {
+                        margin-bottom: 1.5rem;
                     }
                 }
             `}</style>
