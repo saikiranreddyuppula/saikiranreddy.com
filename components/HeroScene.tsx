@@ -8,7 +8,7 @@ interface ScrollRef {
 }
 
 const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
-  const count = 250;
+  const count = 150;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
@@ -200,7 +200,7 @@ const BackgroundWeb = () => {
             float web = 0.0;
             float t = uTime * 0.5;
             
-            for(float i = 0.0; i < 35.0; i++) {
+            for(float i = 0.0; i < 18.0; i++) {
               float ang = hash11(i * 1.34) * 3.14159;
               vec2 n = vec2(cos(ang), sin(ang));
               float d = abs(dot(uv, n));
@@ -418,7 +418,7 @@ const HeroScene = ({ scrollProgress }: HeroSceneProps) => {
     <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
       <Canvas
         camera={{ position: [0, 0, 8], fov: 45 }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
       >
         <color attach="background" args={["#030303"]} />

@@ -9,47 +9,40 @@ const CustomCursor = () => {
   useEffect(() => {
     const cursor = cursorRef.current;
     const follower = followerRef.current;
+    if (!cursor || !follower) return;
+
+    // gsap.quickTo is optimized for high-frequency updates (no tween creation per call)
+    const cursorX = gsap.quickTo(cursor, 'x', { duration: 0.1, ease: 'power2.out' });
+    const cursorY = gsap.quickTo(cursor, 'y', { duration: 0.1, ease: 'power2.out' });
+    const followerX = gsap.quickTo(follower, 'x', { duration: 0.35, ease: 'power3.out' });
+    const followerY = gsap.quickTo(follower, 'y', { duration: 0.35, ease: 'power3.out' });
 
     const onMouseMove = (e: MouseEvent) => {
-      gsap.to(cursor, {
-        x: e.clientX,
-        y: e.clientY,
-        duration: 0.1,
-        ease: 'power2.out',
-      });
-
-      gsap.to(follower, {
-        x: e.clientX,
-        y: e.clientY,
-        duration: 0.35,
-        ease: 'power3.out',
-      });
+      cursorX(e.clientX);
+      cursorY(e.clientY);
+      followerX(e.clientX);
+      followerY(e.clientY);
     };
-
-    const onMouseEnter = () => setHovered(true);
-    const onMouseLeave = () => setHovered(false);
 
     document.addEventListener('mousemove', onMouseMove);
-    
-    const addInteractiveListeners = () => {
-      const interactiveElements = document.querySelectorAll('a, button, .interactive');
-      interactiveElements.forEach((el) => {
-        el.addEventListener('mouseenter', onMouseEnter);
-        el.addEventListener('mouseleave', onMouseLeave);
-      });
+
+    // Use event delegation instead of MutationObserver + querySelectorAll
+    const onMouseOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('a, button, .interactive');
+      if (target) setHovered(true);
+    };
+    const onMouseOut = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('a, button, .interactive');
+      if (target) setHovered(false);
     };
 
-    addInteractiveListeners();
-
-    const observer = new MutationObserver(() => {
-      addInteractiveListeners();
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener('mouseover', onMouseOver);
+    document.addEventListener('mouseout', onMouseOut);
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
-      observer.disconnect();
+      document.removeEventListener('mouseover', onMouseOver);
+      document.removeEventListener('mouseout', onMouseOut);
     };
   }, []);
 

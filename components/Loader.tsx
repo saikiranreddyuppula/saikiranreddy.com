@@ -125,12 +125,12 @@ const Loader = ({
         const letter = text[i];
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
-        canvas.width = 512;
-        canvas.height = 512;
+        canvas.width = 256;
+        canvas.height = 256;
         
         if (context) {
           context.fillStyle = "#ffffff";
-          context.font = "bold 280px -apple-system, BlinkMacSystemFont, sans-serif";
+          context.font = "bold 140px -apple-system, BlinkMacSystemFont, sans-serif";
           context.textAlign = "center";
           context.textBaseline = "middle";
           context.fillText(letter, canvas.width / 2, canvas.height / 2);

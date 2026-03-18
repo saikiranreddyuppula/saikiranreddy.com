@@ -108,7 +108,7 @@ const Hero = () => {
       const intensity = 0.4 + Math.random() * 0.6;
       const spread = 15 + Math.random() * 50;
       const spread2 = 30 + Math.random() * 60;
-      const duration = 0.3 + Math.random() * 1.2;
+      const duration = 1.0 + Math.random() * 2.0; // Slower glow transitions to reduce CPU
       gsap.to(lightChars, {
         textShadow: `0 0 ${4 + Math.random() * 4}px #fff, 0 0 ${spread}px rgba(255,255,255,${intensity}), 0 0 ${spread2}px rgba(255,255,255,${intensity * 0.5})`,
         duration,

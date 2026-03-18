@@ -36,7 +36,7 @@ const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     };
 
     gsap.ticker.add(update);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     // Refresh ScrollTrigger after a short delay to ensure DOM is ready
     const timeout = setTimeout(() => {

@@ -208,7 +208,7 @@ const IndustryCard = ({ industry, index, isActive, onMouseEnter, onMouseLeave }:
                         rgba(20, 20, 20, 0.9) 0%,
                         rgba(10, 10, 10, 0.95) 100%
                     );
-                    backdrop-filter: blur(20px);
+                    /* backdrop-filter removed for performance */
                     transition: background 0.4s ease;
                 }
 

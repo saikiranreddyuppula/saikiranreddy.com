@@ -106,7 +106,7 @@ const MountainTerrain = () => {
   const { geometry, heightData } = useMemo(() => {
     const simplex = new SimplexNoise(42);
     const size = 200;
-    const segments = 256;
+    const segments = 128;
     const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
     
     const positions = geometry.attributes.position.array as Float32Array;
@@ -227,7 +227,7 @@ const MountainTerrain = () => {
           gl_FragColor = vec4(color, 1.0);
         }
       `,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
     });
   }, []);
 
@@ -247,7 +247,7 @@ const AtmosphericParticles = () => {
   const particlesRef = useRef<THREE.Points>(null);
   
   const { positions, velocities } = useMemo(() => {
-    const count = 3000;
+    const count = 1000;
     const positions = new Float32Array(count * 3);
     const velocities = new Float32Array(count * 3);
     
@@ -264,10 +264,15 @@ const AtmosphericParticles = () => {
     return { positions, velocities };
   }, []);
 
+  const frameCount = useRef(0);
+
   useFrame(() => {
     if (!particlesRef.current) return;
+    // Update particles every other frame to reduce CPU load
+    frameCount.current++;
+    if (frameCount.current % 2 !== 0) return;
     const posArray = particlesRef.current.geometry.attributes.position.array as Float32Array;
-    
+
     for (let i = 0; i < posArray.length; i += 3) {
       posArray[i] += velocities[i];
       posArray[i + 1] += velocities[i + 1];
@@ -310,7 +315,7 @@ const FogLayers = () => {
   
   const layers = useMemo(() => {
     const result = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       result.push({
         y: -10 + i * 4,
         scale: 80 + i * 20,
@@ -338,7 +343,6 @@ const FogLayers = () => {
             color="#080808" 
             transparent 
             opacity={layer.opacity}
-            side={THREE.DoubleSide}
             depthWrite={false}
           />
         </mesh>
@@ -400,11 +404,10 @@ const DistantMountains = () => {
               bevelEnabled: false 
             }]} 
           />
-          <meshBasicMaterial 
-            color="#050505" 
-            transparent 
+          <meshBasicMaterial
+            color="#050505"
+            transparent
             opacity={s.opacity}
-            side={THREE.DoubleSide}
           />
         </mesh>
       ))}
@@ -418,7 +421,7 @@ const Birds = () => {
   
   const birdData = useMemo(() => {
     const birds = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 8; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = 30 + Math.random() * 40;
       birds.push({
@@ -552,7 +555,7 @@ const Stars = () => {
   const starsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
-    const count = 2000;
+    const count = 800;
     const positions = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
@@ -602,7 +605,7 @@ const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
   return (
     <Canvas
       camera={{ position: [0, 10, 100], fov: 55, near: 0.1, far: 1000 }}
-      dpr={[1, 2]}
+      dpr={[1, 1.5]}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#000000']} />
@@ -631,6 +634,7 @@ const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
 const MountainSection: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const scrollProgressRef = useRef(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -646,7 +650,11 @@ const MountainSection: React.FC = () => {
         pin: true,
         scrub: 1,
         onUpdate: (self) => {
-          setScrollProgress(self.progress);
+          scrollProgressRef.current = self.progress;
+          // Throttle React state updates to reduce re-renders
+          if (Math.abs(self.progress - scrollProgress) > 0.01) {
+            setScrollProgress(self.progress);
+          }
         },
         onEnter: () => setIsVisible(true),
       });

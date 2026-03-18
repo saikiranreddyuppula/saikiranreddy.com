@@ -30,20 +30,30 @@ const About = () => {
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Smooth parallax loop for Zone A
+    // Smooth parallax loop for Zone A - only runs when section is visible
     const smoothMouse = { x: 0, y: 0 };
     const statementEl = containerRef.current.querySelector(".zone-a-text") as HTMLElement;
     let rafId: number;
+    let isInView = false;
 
     const parallaxLoop = () => {
-      smoothMouse.x += (mouseRef.current.x - smoothMouse.x) * 0.04;
-      smoothMouse.y += (mouseRef.current.y - smoothMouse.y) * 0.04;
-      if (statementEl) {
-        statementEl.style.transform = `translate(${smoothMouse.x * 8}px, ${smoothMouse.y * 5}px)`;
+      if (isInView) {
+        smoothMouse.x += (mouseRef.current.x - smoothMouse.x) * 0.04;
+        smoothMouse.y += (mouseRef.current.y - smoothMouse.y) * 0.04;
+        if (statementEl) {
+          statementEl.style.transform = `translate(${smoothMouse.x * 8}px, ${smoothMouse.y * 5}px)`;
+        }
       }
       rafId = requestAnimationFrame(parallaxLoop);
     };
     rafId = requestAnimationFrame(parallaxLoop);
+
+    // Only run parallax when section is visible
+    const visibilityObserver = new IntersectionObserver(
+      ([entry]) => { isInView = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    visibilityObserver.observe(containerRef.current);
 
     const ctx = gsap.context(() => {
       const lines = gsap.utils.toArray<HTMLElement>(".statement-line");
@@ -186,6 +196,7 @@ const About = () => {
       window.removeEventListener("revealAbout", handleReveal);
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(rafId);
+      visibilityObserver.disconnect();
       ctx.revert();
     };
   }, []);

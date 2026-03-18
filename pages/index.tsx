@@ -1,17 +1,20 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 
-// Components
+// Components - static imports for above-the-fold
 import SmoothScroll from "../components/SmoothScroll";
 import Hero from "../components/Hero";
-import About from "../components/About";
-import Industries from "../components/Industries";
-import MountainSection from "../components/MountainScene";
-import Contact from "../components/Contact";
-import CustomCursor from "../components/CustomCursor";
 import Navbar from "../components/Navbar";
 import Loader from "../components/Loader";
+import CustomCursor from "../components/CustomCursor";
+
+// Lazy-loaded below-the-fold components
+const About = dynamic(() => import("../components/About"), { ssr: false });
+const Industries = dynamic(() => import("../components/Industries"), { ssr: false });
+const MountainSection = dynamic(() => import("../components/MountainScene"), { ssr: false });
+const Contact = dynamic(() => import("../components/Contact"), { ssr: false });
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState(true);
