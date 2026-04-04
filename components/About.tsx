@@ -7,12 +7,6 @@ const MANIFESTO =
   "I don\u2019t just write code \u2014 I build the systems that make everything else possible.";
 const WORDS = MANIFESTO.split(" ");
 
-const STATS = [
-  { value: 8, suffix: "+", label: "Years of\nEngineering" },
-  { value: 50, suffix: "+", label: "Projects\nShipped" },
-  { value: 12, suffix: "", label: "Industries\nServed" },
-];
-
 const MARQUEE =
   "SYSTEMS \u00B7 ARCHITECTURE \u00B7 ENGINEERING \u00B7 SCALE \u00B7 PERFORMANCE \u00B7 INFRASTRUCTURE \u00B7 ";
 const MARQUEE_ALT =
@@ -112,67 +106,6 @@ const About = () => {
       );
 
       // ═══════════════════════════════════════════════
-      // STATS — dramatic count-up with stagger
-      // ═══════════════════════════════════════════════
-      gsap.utils.toArray<HTMLElement>(".stat-col").forEach((col, i) => {
-        gsap.fromTo(
-          col,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.7,
-            delay: i * 0.15,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-      });
-
-      // Stat vertical dividers draw in
-      gsap.utils.toArray<HTMLElement>(".stat-divider").forEach((d, i) => {
-        gsap.fromTo(
-          d,
-          { scaleY: 0 },
-          {
-            scaleY: 1,
-            duration: 0.8,
-            delay: 0.1 + i * 0.12,
-            ease: "power3.inOut",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-      });
-
-      // Count-up numbers
-      gsap.utils.toArray<HTMLElement>(".stat-value").forEach((el) => {
-        const target = Number(el.dataset.value);
-        const suffix = el.dataset.suffix || "";
-        const proxy = { val: 0 };
-        gsap.to(proxy, {
-          val: target,
-          duration: 1.5,
-          ease: "power2.out",
-          onUpdate: () => {
-            el.textContent = Math.round(proxy.val) + suffix;
-          },
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        });
-      });
-
-      // ═══════════════════════════════════════════════
       // TAGLINE — blur reveal
       // ═══════════════════════════════════════════════
       gsap.fromTo(
@@ -244,25 +177,6 @@ const About = () => {
               {MARQUEE_ALT.repeat(4)}
             </span>
           </div>
-        </div>
-
-        {/* ── Stats — oversized numbers with vertical dividers ── */}
-        <div className="about-stats-grid">
-          {STATS.map((stat, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <div className="stat-divider" />}
-              <div className="stat-col">
-                <span
-                  className="stat-value interactive"
-                  data-value={stat.value}
-                  data-suffix={stat.suffix}
-                >
-                  0
-                </span>
-                <span className="stat-label">{stat.label}</span>
-              </div>
-            </React.Fragment>
-          ))}
         </div>
 
         {/* ── Tagline — blur reveal ── */}
@@ -350,15 +264,15 @@ const About = () => {
 
         /* ── Dual Marquee ──────────────────────────── */
         .marquee-strip {
-          padding: 2.5rem 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 1.5rem 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           overflow: hidden;
           opacity: 0;
           margin: 0 -4rem;
           display: flex;
           flex-direction: column;
-          gap: 1.2rem;
+          gap: 0.8rem;
         }
 
         .marquee-track {
@@ -376,20 +290,20 @@ const About = () => {
 
         .marquee-content {
           font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.3em;
+          font-size: clamp(0.75rem, 1.2vw, 1rem);
+          letter-spacing: 0.02em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.5);
           white-space: nowrap;
           padding: 0 0.5rem;
         }
 
         .marquee-bold {
           font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: 1.6rem;
+          font-size: clamp(3rem, 6vw, 5.5rem);
           font-weight: 300;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.06);
+          letter-spacing: -0.01em;
+          color: rgba(255, 255, 255, 0.9);
         }
 
         @keyframes marquee-left {
@@ -408,62 +322,6 @@ const About = () => {
           100% {
             transform: translateX(0);
           }
-        }
-
-        /* ── Stats — oversized numbers ─────────────── */
-        .about-stats-grid {
-          display: flex;
-          align-items: stretch;
-          justify-content: center;
-          padding: 6rem 0;
-        }
-
-        .stat-col {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.2rem;
-          opacity: 0;
-        }
-
-        .stat-value {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(4rem, 10vw, 8rem);
-          font-weight: 300;
-          color: #fff;
-          line-height: 1;
-          cursor: default;
-          transition: text-shadow 0.4s ease;
-        }
-
-        .stat-value:hover {
-          text-shadow:
-            0 0 80px rgba(255, 255, 255, 0.2),
-            0 0 160px rgba(255, 255, 255, 0.08);
-        }
-
-        .stat-label {
-          font-family: var(--font-mono);
-          font-size: 0.55rem;
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.2);
-          text-align: center;
-          white-space: pre-line;
-          line-height: 1.8;
-        }
-
-        .stat-divider {
-          width: 1px;
-          background: linear-gradient(
-            180deg,
-            transparent,
-            rgba(255, 255, 255, 0.12),
-            transparent
-          );
-          transform-origin: top center;
-          margin: 1rem 0;
         }
 
         /* ── Tagline ───────────────────────────────── */
@@ -504,22 +362,6 @@ const About = () => {
           }
           .manifesto-pin {
             min-height: 80vh;
-          }
-          .about-stats-grid {
-            flex-direction: column;
-            gap: 3rem;
-            padding: 4rem 0;
-          }
-          .stat-divider {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.12),
-              transparent
-            );
-            margin: 0 auto;
           }
         }
       `}</style>
