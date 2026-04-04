@@ -261,9 +261,9 @@ const Contact = () => {
   }, []);
 
   const socialLinks = [
-    { name: "LinkedIn", url: "https://linkedin.com" },
-    { name: "GitHub", url: "https://github.com" },
-    { name: "Twitter", url: "https://twitter.com" },
+    { name: "LinkedIn", url: "https://www.linkedin.com/in/saisk73/" },
+    { name: "GitHub", url: "https://github.com/saisk73" },
+    { name: "X", url: "https://x.com/saikiranreddy_u" },
   ];
 
   return (
@@ -320,7 +320,7 @@ const Contact = () => {
           </div>
 
           <p className="contact-tagline">
-            Available for full-time positions, consulting, and select projects.
+            Available for full-time positions and consulting.
           </p>
         </div>
 
