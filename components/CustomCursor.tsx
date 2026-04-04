@@ -31,11 +31,16 @@ const CustomCursor = () => {
 
     document.addEventListener('mousemove', onMouseMove);
     
+    const trackedElements = new Set<Element>();
+
     const addInteractiveListeners = () => {
       const interactiveElements = document.querySelectorAll('a, button, .interactive');
       interactiveElements.forEach((el) => {
-        el.addEventListener('mouseenter', onMouseEnter);
-        el.addEventListener('mouseleave', onMouseLeave);
+        if (!trackedElements.has(el)) {
+          trackedElements.add(el);
+          el.addEventListener('mouseenter', onMouseEnter);
+          el.addEventListener('mouseleave', onMouseLeave);
+        }
       });
     };
 
@@ -50,6 +55,11 @@ const CustomCursor = () => {
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
       observer.disconnect();
+      trackedElements.forEach((el) => {
+        el.removeEventListener('mouseenter', onMouseEnter);
+        el.removeEventListener('mouseleave', onMouseLeave);
+      });
+      trackedElements.clear();
     };
   }, []);
 
