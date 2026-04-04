@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 
@@ -8,474 +8,44 @@ const industries = [
   {
     name: "Ecommerce",
     number: "01",
-    description:
-      "Scalable platforms that handle millions of transactions with real-time inventory, dynamic pricing, and seamless checkout experiences.",
+    video: "/videos/ecommerce.mp4",
     tags: ["Payments", "Inventory", "Microservices"],
   },
   {
-    name: "Cyber Security",
+    name: "Cyber\u00A0Security",
     number: "02",
-    description:
-      "Zero-trust architectures and threat detection systems that protect critical infrastructure at scale.",
+    video: "/videos/cybersecurity.mp4",
     tags: ["Zero Trust", "Threat Detection", "Compliance"],
   },
   {
     name: "Healthcare",
     number: "03",
-    description:
-      "HIPAA-compliant systems for patient data management, telemedicine platforms, and clinical workflow automation.",
+    video: "/videos/healthcare.mp4",
     tags: ["HIPAA", "EHR Systems", "Telemedicine"],
   },
   {
     name: "Hospitality",
     number: "04",
-    description:
-      "Real-time booking engines, guest experience platforms, and operational systems that delight at every touchpoint.",
+    video: "/videos/hospitality.mp4",
     tags: ["Booking Engines", "Guest Experience", "PMS"],
   },
   {
-    name: "Generative AI",
+    name: "Generative\u00A0AI",
     number: "05",
-    description:
-      "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
+    video: "/videos/ai.mp4",
     tags: ["ML Pipelines", "NLP", "Computer Vision"],
   },
   {
     name: "Manufacturing",
     number: "06",
-    description:
-      "IoT integration, supply chain optimization, and predictive maintenance systems for smart factories.",
+    video: "/videos/manufacturing.mp4",
     tags: ["IoT", "Supply Chain", "Predictive Maintenance"],
   },
 ];
 
-interface RowProps {
-  industry: (typeof industries)[0];
-  index: number;
-  isActive: boolean;
-  onEnter: () => void;
-  onLeave: () => void;
-}
-
-const IndustryRow = ({
-  industry,
-  index,
-  isActive,
-  onEnter,
-  onLeave,
-}: RowProps) => {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const descRef = useRef<HTMLDivElement>(null);
-  const tagsRef = useRef<HTMLDivElement>(null);
-  const [mouseX, setMouseX] = useState(50);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!rowRef.current) return;
-    const rect = rowRef.current.getBoundingClientRect();
-    setMouseX(((e.clientX - rect.left) / rect.width) * 100);
-  }, []);
-
-  useEffect(() => {
-    const desc = descRef.current;
-    const tags = tagsRef.current;
-    if (!desc || !tags) return;
-
-    if (isActive) {
-      gsap.to(desc, {
-        clipPath: "inset(0% 0% 0% 0%)",
-        opacity: 1,
-        duration: 0.35,
-        delay: 0.05,
-        ease: "power3.out",
-      });
-      gsap.to(tags, {
-        clipPath: "inset(0% 0% 0% 0%)",
-        opacity: 1,
-        duration: 0.3,
-        delay: 0.12,
-        ease: "power3.out",
-      });
-    } else {
-      gsap.to(desc, {
-        clipPath: "inset(0% 100% 0% 0%)",
-        opacity: 0,
-        duration: 0.2,
-        ease: "power2.inOut",
-      });
-      gsap.to(tags, {
-        clipPath: "inset(0% 100% 0% 0%)",
-        opacity: 0,
-        duration: 0.18,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isActive]);
-
-  const accentStyles = {
-    "--mouse-x": `${mouseX}%`,
-  } as React.CSSProperties;
-
-  return (
-    <div
-      ref={rowRef}
-      className={`ind-row interactive ${isActive ? "is-active" : ""}`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onMouseMove={handleMouseMove}
-      data-index={index}
-      style={accentStyles}
-    >
-      {/* Cursor-following light pool — accent colored */}
-      <div className="ind-row-light" />
-
-      {/* Rule line glow — accent colored */}
-      <div className="ind-row-rule-glow" />
-
-      {/* Active indicator dot */}
-      <div className="ind-row-indicator" />
-
-      {/* Ghost number */}
-      <div className="ind-row-ghost" aria-hidden="true">
-        {industry.number}
-      </div>
-
-      {/* Main row content */}
-      <div className="ind-row-content">
-        <div className="ind-row-head">
-          <span className="ind-row-number">{industry.number}</span>
-          <h3 className="ind-row-name">
-            {industry.name.split("").map((char, i) => (
-              <span
-                key={i}
-                className="ind-char"
-                style={{ transitionDelay: `${i * 0.015}s` }}
-              >
-                {char === " " ? "\u00A0" : char}
-              </span>
-            ))}
-          </h3>
-          <div className="ind-row-arrow">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-            >
-              <path d="M7 17L17 7M17 7H9M17 7V15" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Description — clip-path reveal */}
-        <div ref={descRef} className="ind-row-desc-wrap">
-          <p className="ind-row-desc">{industry.description}</p>
-        </div>
-
-        {/* Tags — clip-path reveal */}
-        <div ref={tagsRef} className="ind-row-tags-wrap">
-          <div className="ind-row-tags">
-            {industry.tags.map((tag, i) => (
-              <span key={i} className="ind-row-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom rule line */}
-      <div className="ind-row-rule" />
-
-      <style jsx>{`
-        .ind-row {
-          position: relative;
-          cursor: pointer;
-          overflow: hidden;
-        }
-
-        /* ── Cursor-following light pool — accent colored ── */
-        .ind-row-light {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            600px ellipse at var(--mouse-x) 50%,
-            rgba(255, 255, 255, 0.04),
-            transparent 60%
-          );
-          opacity: 0;
-          pointer-events: none;
-          z-index: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .is-active .ind-row-light {
-          opacity: 1;
-        }
-
-        /* ── Rule line glow ── */
-        .ind-row-rule-glow {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: radial-gradient(
-            300px ellipse at var(--mouse-x) 50%,
-            rgba(255, 255, 255, 0.4),
-            transparent 70%
-          );
-          opacity: 0;
-          pointer-events: none;
-          z-index: 5;
-          transition: opacity 0.2s ease;
-        }
-
-        .is-active .ind-row-rule-glow {
-          opacity: 1;
-        }
-
-        /* ── Active indicator dot ── */
-        .ind-row-indicator {
-          position: absolute;
-          left: -1.5rem;
-          top: 50%;
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-50%) scale(0);
-          pointer-events: none;
-          z-index: 5;
-          transition:
-            transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            background 0.3s ease,
-            box-shadow 0.3s ease;
-        }
-
-        .is-active .ind-row-indicator {
-          transform: translateY(-50%) scale(1);
-          background: rgba(255, 255, 255, 0.7);
-          box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
-        }
-
-        /* ── Ghost number ── */
-        .ind-row-ghost {
-          position: absolute;
-          right: -2%;
-          top: 50%;
-          transform: translateY(-50%);
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(8rem, 18vw, 16rem);
-          font-weight: 300;
-          line-height: 1;
-          color: rgba(255, 255, 255, 0);
-          pointer-events: none;
-          user-select: none;
-          z-index: 0;
-          transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          letter-spacing: -0.05em;
-        }
-
-        .is-active .ind-row-ghost {
-          color: rgba(255, 255, 255, 0.03);
-        }
-
-        /* ── Content ── */
-        .ind-row-content {
-          position: relative;
-          z-index: 2;
-          padding: 2.75rem 0;
-        }
-
-        .ind-row-head {
-          display: flex;
-          align-items: baseline;
-          gap: 2.5rem;
-        }
-
-        .ind-row-number {
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.2);
-          min-width: 2.5rem;
-          transition: color 0.25s ease;
-          padding-top: 0.3rem;
-        }
-
-        .is-active .ind-row-number {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
-        .ind-row-name {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(2.5rem, 6vw, 5.5rem);
-          font-weight: 300;
-          color: rgba(255, 255, 255, 0.4);
-          margin: 0;
-          flex: 1;
-          line-height: 1.1;
-          letter-spacing: -0.02em;
-          transition: text-shadow 0.3s ease;
-          display: flex;
-          flex-wrap: wrap;
-        }
-
-        .is-active .ind-row-name {
-          text-shadow:
-            0 0 60px rgba(255, 255, 255, 0.12),
-            0 0 120px rgba(255, 255, 255, 0.05);
-        }
-
-        /* ── Per-character color transition ── */
-        .ind-char {
-          display: inline-block;
-          color: rgba(255, 255, 255, 0.4);
-          transition:
-            color 0.2s ease,
-            transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .is-active .ind-char {
-          color: #fff;
-          transform: translateY(-1px);
-        }
-
-        .ind-row-arrow {
-          color: rgba(255, 255, 255, 0.08);
-          transform: translate(-8px, 8px) rotate(0deg);
-          transition:
-            color 0.25s ease,
-            transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-          flex-shrink: 0;
-          align-self: center;
-        }
-
-        .is-active .ind-row-arrow {
-          color: rgba(255, 255, 255, 0.4);
-          transform: translate(0, 0) rotate(0deg);
-        }
-
-        /* ── Description ── */
-        .ind-row-desc-wrap {
-          clip-path: inset(0% 100% 0% 0%);
-          opacity: 0;
-          overflow: hidden;
-        }
-
-        .ind-row-desc {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(1rem, 1.4vw, 1.2rem);
-          font-style: italic;
-          line-height: 1.7;
-          color: rgba(255, 255, 255, 0.4);
-          margin: 0;
-          padding: 1.25rem 0 0 5rem;
-          max-width: 600px;
-        }
-
-        /* ── Tags — accent colored on active ── */
-        .ind-row-tags-wrap {
-          clip-path: inset(0% 100% 0% 0%);
-          opacity: 0;
-          overflow: hidden;
-        }
-
-        .ind-row-tags {
-          display: flex;
-          gap: 0.75rem;
-          padding: 1.25rem 0 0.5rem 5rem;
-          flex-wrap: wrap;
-        }
-
-        .ind-row-tag {
-          font-family: var(--font-mono);
-          font-size: 0.6rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-top-color: rgba(255, 255, 255, 0.18);
-          border-bottom-color: rgba(255, 255, 255, 0.04);
-          padding: 0.35rem 0.85rem;
-          border-radius: 100px;
-          background: linear-gradient(
-            165deg,
-            rgba(255, 255, 255, 0.06) 0%,
-            rgba(255, 255, 255, 0.02) 50%,
-            rgba(255, 255, 255, 0) 100%
-          );
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          transition:
-            border-color 0.3s ease,
-            color 0.3s ease,
-            box-shadow 0.3s ease,
-            background 0.3s ease;
-        }
-
-        .is-active .ind-row-tag {
-          border-color: rgba(255, 255, 255, 0.25);
-          border-top-color: rgba(255, 255, 255, 0.4);
-          border-bottom-color: rgba(255, 255, 255, 0.08);
-          color: rgba(255, 255, 255, 0.7);
-          background: linear-gradient(
-            165deg,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.04) 50%,
-            rgba(255, 255, 255, 0.01) 100%
-          );
-          box-shadow:
-            0 0 12px rgba(255, 255, 255, 0.06),
-            0 1px 2px rgba(255, 255, 255, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        /* ── Rule line ── */
-        .ind-row-rule {
-          height: 1px;
-          background: rgba(255, 255, 255, 0.06);
-          transform-origin: left center;
-        }
-
-        @media (max-width: 768px) {
-          .ind-row-content {
-            padding: 2rem 0;
-          }
-
-          .ind-row-head {
-            gap: 1.25rem;
-          }
-
-          .ind-row-desc {
-            padding-left: 3.75rem;
-          }
-
-          .ind-row-tags {
-            padding-left: 3.75rem;
-          }
-
-          .ind-row-ghost {
-            font-size: 6rem;
-            right: -5%;
-          }
-
-          .ind-row-indicator {
-            left: -0.75rem;
-            width: 4px;
-            height: 4px;
-          }
-        }
-      `}</style>
-    </div>
-  );
-};
-
 const Industries = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   // Intersection observer for entrance
@@ -487,127 +57,206 @@ const Industries = () => {
           observer.disconnect();
         }
       },
-      { threshold: 0.08 },
+      { threshold: 0.05 },
     );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Entrance animations — cinematic sequence
+  // Entrance animations
   useEffect(() => {
-    if (!isVisible || !containerRef.current) return;
+    if (!isVisible || !sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      // 1. Label slides in
       gsap.fromTo(
         ".ind-label",
         { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" },
       );
 
-      // 2. Title lines reveal with clip-path
-      const titleLines = gsap.utils.toArray<HTMLElement>(".ind-title-line");
-      titleLines.forEach((line, i) => {
-        gsap.fromTo(
-          line,
-          { clipPath: "inset(100% 0% 0% 0%)", opacity: 0 },
-          {
-            clipPath: "inset(0% 0% 0% 0%)",
-            opacity: 1,
-            duration: 0.6,
-            delay: 0.1 + i * 0.12,
-            ease: "power3.out",
-          },
-        );
-      });
-
-      // 3. Rule lines draw in — staggered
-      const rules = gsap.utils.toArray<HTMLElement>(".ind-row-rule");
-      rules.forEach((rule, i) => {
-        gsap.fromTo(
-          rule,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 0.7,
-            delay: 0.25 + i * 0.06,
-            ease: "power3.inOut",
-          },
-        );
-      });
-
-      // 4. Rows fade up — more staggered for cinematic feel
-      const rows = gsap.utils.toArray<HTMLElement>(".ind-row");
-      rows.forEach((row, i) => {
-        gsap.fromTo(
-          row.querySelector(".ind-row-content"),
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            delay: 0.3 + i * 0.1,
-            ease: "power3.out",
-          },
-        );
-      });
-
-      // 5. Counter
       gsap.fromTo(
-        ".ind-counter",
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, delay: 0.8, ease: "power2.out" },
+        ".ind-title-line",
+        { clipPath: "inset(100% 0% 0% 0%)", opacity: 0 },
+        {
+          clipPath: "inset(0% 0% 0% 0%)",
+          opacity: 1,
+          duration: 0.7,
+          stagger: 0.12,
+          ease: "power3.out",
+          delay: 0.1,
+        },
       );
-    }, containerRef);
+
+      gsap.fromTo(
+        ".ind-scroll-hint",
+        { opacity: 0, x: -10 },
+        { opacity: 1, x: 0, duration: 0.5, delay: 0.6, ease: "power2.out" },
+      );
+    }, sectionRef);
 
     return () => ctx.revert();
   }, [isVisible]);
 
-  // Scroll-driven parallax
+  // Horizontal scroll + panel animations
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!sectionRef.current || !trackRef.current) return;
 
-    const ctx = gsap.context(() => {
-      // Title parallax
-      gsap.to(".ind-title", {
-        y: -50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1.5,
-        },
-      });
+    // Small delay to ensure layout is computed
+    const timer = setTimeout(() => {
+      const ctx = gsap.context(() => {
+        const track = trackRef.current!;
+        const totalScroll = track.scrollWidth - window.innerWidth;
 
-      // Ghost numbers parallax — each drifts independently
-      const ghosts = gsap.utils.toArray<HTMLElement>(".ind-row-ghost");
-      ghosts.forEach((ghost, i) => {
-        gsap.to(ghost, {
-          y: -30 - i * 8,
+        // Main horizontal scroll tween
+        const scrollTween = gsap.to(track, {
+          x: -totalScroll,
           ease: "none",
           scrollTrigger: {
-            trigger: ghost.parentElement,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 2,
+            trigger: sectionRef.current,
+            start: "top top",
+            end: () => `+=${totalScroll}`,
+            pin: true,
+            scrub: 1,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
           },
         });
-      });
-    }, containerRef);
 
-    return () => ctx.revert();
+        // Per-panel animations using containerAnimation
+        const panels = gsap.utils.toArray<HTMLElement>(".ind-panel");
+        panels.forEach((panel) => {
+          const video = panel.querySelector(
+            ".ind-panel-video",
+          ) as HTMLElement;
+          const name = panel.querySelector(
+            ".ind-panel-name",
+          ) as HTMLElement;
+          const number = panel.querySelector(
+            ".ind-panel-number",
+          ) as HTMLElement;
+          const tags = panel.querySelector(
+            ".ind-panel-tags",
+          ) as HTMLElement;
+          const overlay = panel.querySelector(
+            ".ind-panel-overlay-text",
+          ) as HTMLElement;
+
+          // Video parallax — moves counter to scroll for depth
+          if (video) {
+            gsap.fromTo(
+              video,
+              { xPercent: 15 },
+              {
+                xPercent: -15,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: panel,
+                  containerAnimation: scrollTween,
+                  start: "left right",
+                  end: "right left",
+                  scrub: true,
+                },
+              },
+            );
+          }
+
+          // Panel content reveal
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: panel,
+              containerAnimation: scrollTween,
+              start: "left 80%",
+              end: "left 30%",
+              toggleActions: "play none none reverse",
+            },
+          });
+
+          // Number
+          if (number) {
+            tl.fromTo(
+              number,
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+              0,
+            );
+          }
+
+          // Character stagger reveal
+          if (name) {
+            const chars = name.querySelectorAll(".ind-char");
+            tl.fromTo(
+              chars,
+              { y: 80, opacity: 0, rotateX: -50 },
+              {
+                y: 0,
+                opacity: 1,
+                rotateX: 0,
+                duration: 0.6,
+                stagger: 0.02,
+                ease: "power3.out",
+              },
+              0.05,
+            );
+          }
+
+          // Tags
+          if (tags) {
+            tl.fromTo(
+              tags,
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+              0.25,
+            );
+          }
+
+          // Ghost overlay
+          if (overlay) {
+            tl.fromTo(
+              overlay,
+              { opacity: 0, xPercent: 5 },
+              {
+                opacity: 1,
+                xPercent: 0,
+                duration: 0.8,
+                ease: "power2.out",
+              },
+              0.1,
+            );
+          }
+        });
+
+        // Divider animations
+        const dividers = gsap.utils.toArray<HTMLElement>(".ind-divider");
+        dividers.forEach((div) => {
+          gsap.fromTo(
+            div,
+            { scaleY: 0 },
+            {
+              scaleY: 1,
+              duration: 0.6,
+              ease: "power3.inOut",
+              scrollTrigger: {
+                trigger: div,
+                containerAnimation: scrollTween,
+                start: "left 75%",
+                toggleActions: "play none none reverse",
+              },
+            },
+          );
+        });
+      }, sectionRef);
+
+      return () => ctx.revert();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <section ref={containerRef} id="industries" className="ind-section">
-      <div className="ind-container">
-        {/* Header */}
-        <div className="ind-header">
+    <section ref={sectionRef} id="industries" className="ind-section">
+      {/* Header */}
+      <div className="ind-header-area">
+        <div className="ind-header-inner">
           <div className="ind-label">
             <span className="ind-label-index">02</span>
             <span className="ind-label-line" />
@@ -623,57 +272,113 @@ const Industries = () => {
               <em className="ind-title-accent">that scale.</em>
             </span>
           </h2>
+
+          <div className="ind-scroll-hint">
+            <span className="ind-scroll-hint-line" />
+            <span className="ind-scroll-hint-text">Scroll to explore</span>
+            <svg
+              className="ind-scroll-hint-arrow"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1"
+            >
+              <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+          </div>
         </div>
+      </div>
 
-        {/* First rule line */}
-        <div className="ind-row-rule ind-rule-first" />
+      {/* Horizontal scroll track */}
+      <div ref={trackRef} className="ind-track">
+        {industries.map((industry, index) => (
+          <React.Fragment key={index}>
+            <div
+              className={`ind-panel ${index % 2 === 0 ? "ind-panel--video-right" : "ind-panel--video-left"}`}
+            >
+              {/* Video */}
+              <div className="ind-panel-video-wrap">
+                <div className="ind-panel-video-inner">
+                  <video
+                    className="ind-panel-video"
+                    src={industry.video}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                  <div className="ind-panel-video-grain" />
+                  {/* Video border glow */}
+                  <div className="ind-panel-video-border" />
+                </div>
+              </div>
 
-        {/* Industry Rows */}
-        <div className="ind-list">
-          {industries.map((industry, index) => (
-            <IndustryRow
-              key={index}
-              industry={industry}
-              index={index}
-              isActive={activeIndex === index}
-              onEnter={() => setActiveIndex(index)}
-              onLeave={() => setActiveIndex(null)}
-            />
-          ))}
-        </div>
+              {/* Text content */}
+              <div className="ind-panel-text">
+                <span className="ind-panel-number">{industry.number}</span>
+                <h3 className="ind-panel-name">
+                  {industry.name.split("").map((char, i) => (
+                    <span key={i} className="ind-char">
+                      {char}
+                    </span>
+                  ))}
+                </h3>
+                <div className="ind-panel-tags">
+                  {industry.tags.map((tag, i) => (
+                    <span key={i} className="ind-panel-tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
 
-        {/* Counter */}
-        <div className="ind-counter">
-          <span className="ind-counter-label">Domains of expertise</span>
-          <span className="ind-counter-value">
-            {activeIndex !== null
-              ? `${String(activeIndex + 1).padStart(2, "0")} / ${String(industries.length).padStart(2, "0")}`
-              : String(industries.length).padStart(2, "0")}
-          </span>
+              {/* Large ghost overlay text */}
+              <div className="ind-panel-overlay-text" aria-hidden="true">
+                {industry.name.replace("\u00A0", " ")}
+              </div>
+            </div>
+
+            {/* Vertical divider */}
+            {index < industries.length - 1 && (
+              <div className="ind-divider" />
+            )}
+          </React.Fragment>
+        ))}
+
+        {/* End marker */}
+        <div className="ind-end-marker">
+          <div className="ind-end-marker-content">
+            <span className="ind-end-number">06</span>
+            <span className="ind-end-line" />
+            <span className="ind-end-text">Domains of expertise</span>
+          </div>
         </div>
       </div>
 
       <style jsx global>{`
+        /* ═══════════════════════════════════════════════
+           INDUSTRIES — Horizontal Scroll Section
+           ═══════════════════════════════════════════════ */
+
         .ind-section {
           position: relative;
           z-index: 1;
           background: #000;
           overflow: hidden;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-        }
-
-        .ind-container {
-          max-width: 1300px;
-          width: 100%;
-          margin: 0 auto;
-          padding: 10rem 4rem 8rem;
         }
 
         /* ── Header ── */
-        .ind-header {
-          margin-bottom: 5rem;
+        .ind-header-area {
+          padding: 8rem 4rem 3rem;
+          max-width: 1300px;
+          margin: 0 auto;
+        }
+
+        .ind-header-inner {
+          position: relative;
         }
 
         .ind-label {
@@ -705,7 +410,6 @@ const Industries = () => {
           color: rgba(255, 255, 255, 0.5);
         }
 
-        /* ── Title ── */
         .ind-title {
           font-family: "Cormorant Garamond", var(--font-serif);
           font-size: clamp(2.5rem, 5vw, 4rem);
@@ -715,7 +419,6 @@ const Industries = () => {
           margin: 0;
           display: flex;
           flex-direction: column;
-          will-change: transform;
         }
 
         .ind-title-line {
@@ -730,60 +433,386 @@ const Industries = () => {
           font-style: italic;
         }
 
-        /* ── List ── */
-        .ind-list {
-          margin-bottom: 3rem;
-        }
-
-        .ind-rule-first {
-          height: 1px;
-          background: rgba(255, 255, 255, 0.06);
-          transform-origin: left center;
-          margin-bottom: 0;
-        }
-
-        /* ── Counter ── */
-        .ind-counter {
+        /* ── Scroll hint ── */
+        .ind-scroll-hint {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 2.5rem;
           opacity: 0;
-          padding-top: 2rem;
         }
 
-        .ind-counter-label {
+        .ind-scroll-hint-line {
+          width: 30px;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .ind-scroll-hint-text {
           font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.15em;
+          font-size: 0.6rem;
+          letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.3);
         }
 
-        .ind-counter-value {
+        .ind-scroll-hint-arrow {
+          color: rgba(255, 255, 255, 0.3);
+          animation: ind-arrow-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes ind-arrow-pulse {
+          0%,
+          100% {
+            transform: translateX(0);
+            opacity: 0.3;
+          }
+          50% {
+            transform: translateX(5px);
+            opacity: 0.7;
+          }
+        }
+
+        /* ── Track ── */
+        .ind-track {
+          display: flex;
+          align-items: stretch;
+          height: 100vh;
+          will-change: transform;
+          padding-left: 4rem;
+        }
+
+        /* ── Panel ── */
+        .ind-panel {
+          position: relative;
+          flex-shrink: 0;
+          width: 85vw;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+          padding: 4rem;
+          gap: 4%;
+        }
+
+        .ind-panel--video-right {
+          flex-direction: row;
+        }
+
+        .ind-panel--video-left {
+          flex-direction: row-reverse;
+        }
+
+        /* ── Video ── */
+        .ind-panel-video-wrap {
+          position: relative;
+          flex-shrink: 0;
+          width: 46%;
+          height: 65%;
+          overflow: hidden;
+        }
+
+        .ind-panel-video-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          border-radius: 3px;
+        }
+
+        .ind-panel-video {
+          width: 130%;
+          height: 100%;
+          object-fit: cover;
+          margin-left: -15%;
+          filter: grayscale(1) contrast(1.1) brightness(0.8);
+          will-change: transform;
+        }
+
+        /* Grain overlay on video */
+        .ind-panel-video-grain {
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+          pointer-events: none;
+          mix-blend-mode: overlay;
+        }
+
+        /* Subtle border glow */
+        .ind-panel-video-border {
+          position: absolute;
+          inset: 0;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 3px;
+          pointer-events: none;
+          box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ── Text content ── */
+        .ind-panel-text {
+          flex: 1;
+          padding: 0 2%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          z-index: 2;
+          min-width: 0;
+        }
+
+        .ind-panel-number {
           font-family: var(--font-mono);
-          font-size: 0.85rem;
-          letter-spacing: 0.1em;
-          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.7rem;
+          letter-spacing: 0.25em;
+          color: rgba(255, 255, 255, 0.2);
+          margin-bottom: 1.5rem;
+          opacity: 0;
+        }
+
+        .ind-panel-name {
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(3.5rem, 6.5vw, 7rem);
+          font-weight: 300;
+          color: #fff;
+          margin: 0;
+          line-height: 1;
+          letter-spacing: -0.03em;
+          perspective: 600px;
+          display: flex;
+          flex-wrap: wrap;
+        }
+
+        .ind-char {
+          display: inline-block;
+          will-change: transform, opacity;
+          transition: text-shadow 0.4s ease;
+        }
+
+        .ind-panel:hover .ind-char {
+          text-shadow:
+            0 0 40px rgba(255, 255, 255, 0.15),
+            0 0 80px rgba(255, 255, 255, 0.05);
+        }
+
+        .ind-panel-tags {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 2.5rem;
+          flex-wrap: wrap;
+          opacity: 0;
+        }
+
+        .ind-panel-tag {
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-top-color: rgba(255, 255, 255, 0.18);
+          border-bottom-color: rgba(255, 255, 255, 0.04);
+          padding: 0.4rem 0.9rem;
+          border-radius: 100px;
+          background: linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            rgba(255, 255, 255, 0.01) 100%
+          );
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           transition: all 0.3s ease;
         }
 
+        .ind-panel-tag:hover {
+          border-color: rgba(255, 255, 255, 0.3);
+          color: rgba(255, 255, 255, 0.7);
+          background: rgba(255, 255, 255, 0.08);
+          box-shadow:
+            0 0 16px rgba(255, 255, 255, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* ── Ghost overlay text ── */
+        .ind-panel-overlay-text {
+          position: absolute;
+          bottom: 5%;
+          left: 4%;
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(5rem, 13vw, 13rem);
+          font-weight: 300;
+          line-height: 0.85;
+          color: transparent;
+          -webkit-text-stroke: 1px rgba(255, 255, 255, 0.04);
+          letter-spacing: -0.04em;
+          pointer-events: none;
+          user-select: none;
+          white-space: nowrap;
+          z-index: 0;
+          opacity: 0;
+        }
+
+        /* ── Divider ── */
+        .ind-divider {
+          flex-shrink: 0;
+          width: 1px;
+          height: 50%;
+          align-self: center;
+          background: linear-gradient(
+            to bottom,
+            transparent,
+            rgba(255, 255, 255, 0.12) 30%,
+            rgba(255, 255, 255, 0.12) 70%,
+            transparent
+          );
+          transform-origin: center top;
+          transform: scaleY(0);
+          margin: 0 0.5rem;
+        }
+
+        /* ── End marker ── */
+        .ind-end-marker {
+          flex-shrink: 0;
+          width: 25vw;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ind-end-marker-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .ind-end-number {
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(4rem, 8vw, 8rem);
+          font-weight: 300;
+          color: rgba(255, 255, 255, 0.05);
+          line-height: 1;
+        }
+
+        .ind-end-line {
+          width: 1px;
+          height: 40px;
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        .ind-end-text {
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.15);
+          writing-mode: vertical-lr;
+        }
+
+        /* ═══════════════════════════════════════════════
+           Hover effects on video
+           ═══════════════════════════════════════════════ */
+
+        .ind-panel-video-inner {
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .ind-panel:hover .ind-panel-video-inner {
+          transform: scale(1.03);
+        }
+
+        .ind-panel:hover .ind-panel-video-border {
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow:
+            inset 0 0 30px rgba(0, 0, 0, 0.4),
+            0 0 40px rgba(255, 255, 255, 0.03);
+        }
+
+        .ind-panel-video-border {
+          transition: all 0.5s ease;
+        }
+
+        /* ═══════════════════════════════════════════════
+           Responsive
+           ═══════════════════════════════════════════════ */
+
         @media (max-width: 1024px) {
-          .ind-container {
-            padding: 7rem 2.5rem 6rem;
+          .ind-header-area {
+            padding: 6rem 2.5rem 2.5rem;
+          }
+
+          .ind-track {
+            padding-left: 2.5rem;
+          }
+
+          .ind-panel {
+            width: 90vw;
+            padding: 3rem 2.5rem;
+            gap: 3%;
+          }
+
+          .ind-panel-video-wrap {
+            width: 44%;
+            height: 55%;
           }
         }
 
         @media (max-width: 768px) {
-          .ind-container {
-            padding: 5rem 1.5rem 4rem;
-          }
-
-          .ind-header {
-            margin-bottom: 3rem;
+          .ind-header-area {
+            padding: 5rem 1.5rem 2rem;
           }
 
           .ind-label {
             margin-bottom: 1.5rem;
+          }
+
+          .ind-track {
+            padding-left: 1.5rem;
+          }
+
+          .ind-panel {
+            width: 95vw;
+            padding: 2rem 1.5rem;
+            flex-direction: column !important;
+            justify-content: center;
+            gap: 2rem;
+          }
+
+          .ind-panel-video-wrap {
+            width: 90%;
+            height: 32%;
+          }
+
+          .ind-panel-text {
+            padding: 0;
+            text-align: center;
+            align-items: center;
+          }
+
+          .ind-panel-name {
+            font-size: clamp(2.5rem, 10vw, 4rem);
+            justify-content: center;
+          }
+
+          .ind-panel-overlay-text {
+            font-size: clamp(3rem, 14vw, 5rem);
+            left: 50%;
+            transform: translateX(-50%);
+          }
+
+          .ind-panel-tags {
+            justify-content: center;
+          }
+
+          .ind-divider {
+            display: none;
+          }
+
+          .ind-end-marker {
+            width: 40vw;
+          }
+
+          .ind-scroll-hint {
+            justify-content: center;
           }
         }
       `}</style>
