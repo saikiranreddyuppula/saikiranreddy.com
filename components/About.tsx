@@ -301,11 +301,12 @@ const About = () => {
         }
 
         .marquee-bold {
-          font-family: "Cormorant Garamond", var(--font-serif);
+          font-family: var(--font-sans, "Space Grotesk", sans-serif);
           font-size: clamp(3rem, 6vw, 5.5rem);
-          font-weight: 300;
-          letter-spacing: -0.01em;
+          font-weight: 700;
+          letter-spacing: -0.03em;
           color: rgba(255, 255, 255, 0.9);
+          text-transform: uppercase;
         }
 
         @keyframes marquee-left {
