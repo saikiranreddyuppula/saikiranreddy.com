@@ -116,47 +116,65 @@ const About = () => {
         });
       }
 
-      // Zone B — Pull quote word reveal
-      const pullQuoteWords = gsap.utils.toArray<HTMLElement>(".pull-quote-word");
-      if (pullQuoteWords.length > 0) {
-        const pullQuoteTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: ".zone-b",
-            start: "top 75%",
-            end: "top 25%",
-            scrub: 1,
-          },
-        });
-
-        pullQuoteWords.forEach((word, i) => {
-          pullQuoteTl.fromTo(
-            word,
-            { opacity: 0, y: 25, filter: "blur(4px)" },
-            { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.3 },
-            i * 0.08,
-          );
-        });
-      }
-
-      // Zone B — Body text paragraphs fade in
-      const bodyParagraphs = gsap.utils.toArray<HTMLElement>(".body-paragraph");
-      bodyParagraphs.forEach((p) => {
+      // Zone B — Stats entrance
+      const statBlocks = gsap.utils.toArray<HTMLElement>(".stat-block");
+      statBlocks.forEach((block, i) => {
         gsap.fromTo(
-          p,
+          block,
           { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: "power3.out",
+            delay: i * 0.12,
+            scrollTrigger: {
+              trigger: ".zone-b",
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          },
+        );
+      });
+
+      // Zone B — Stat dividers draw in
+      const dividers = gsap.utils.toArray<HTMLElement>(".stat-divider");
+      dividers.forEach((div) => {
+        gsap.fromTo(
+          div,
+          { scaleY: 0 },
+          {
+            scaleY: 1,
+            duration: 0.8,
+            ease: "power3.inOut",
+            scrollTrigger: {
+              trigger: ".zone-b",
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          },
+        );
+      });
+
+      // Zone B — Philosophy line fade in
+      const philosophy = containerRef.current!.querySelector(".zone-b-philosophy");
+      if (philosophy) {
+        gsap.fromTo(
+          philosophy,
+          { opacity: 0, y: 20 },
           {
             opacity: 1,
             y: 0,
             duration: 0.8,
             ease: "power3.out",
             scrollTrigger: {
-              trigger: p,
+              trigger: philosophy,
               start: "top 85%",
               toggleActions: "play none none none",
             },
           },
         );
-      });
+      }
 
       // Zone B — Inline stat count-ups
       const inlineStats = gsap.utils.toArray<HTMLElement>(".inline-stat");
@@ -190,14 +208,6 @@ const About = () => {
     };
   }, []);
 
-  // Helper: wrap pull-quote text into word spans
-  const renderPullQuote = (text: string) =>
-    text.split(/\s+/).map((word, i) => (
-      <span key={i} className="pull-quote-word-wrap">
-        <span className="pull-quote-word">{word}</span>{" "}
-      </span>
-    ));
-
   return (
     <section ref={containerRef} id="about" className="about-section" style={{ visibility: "hidden" }}>
       {/* Section label */}
@@ -222,33 +232,28 @@ const About = () => {
 
       </div>
 
-      {/* ═══ ZONE B — The Narrative ═══ */}
+      {/* ═══ ZONE B — Stats & Philosophy ═══ */}
       <div className="zone-b">
-        <div className="zone-b-left">
-          <blockquote className="pull-quote">
-            {renderPullQuote("Eight years of turning \"this can\u2019t be done\" into production.")}
-          </blockquote>
+        <div className="zone-b-stats">
+          <div className="stat-block">
+            <span className="stat-number inline-stat interactive" data-value="8" data-suffix="+">0</span>
+            <span className="stat-label">Years</span>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat-block">
+            <span className="stat-number inline-stat interactive" data-value="50" data-suffix="+">0</span>
+            <span className="stat-label">Projects</span>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat-block">
+            <span className="stat-number inline-stat interactive" data-value="12" data-suffix="">0</span>
+            <span className="stat-label">Industries</span>
+          </div>
         </div>
 
-        <div className="zone-b-right">
-          <p className="body-paragraph">
-            From early-stage startups to high-scale platforms, I&rsquo;ve
-            been the engineer teams count on to deliver.
-          </p>
-          <p className="body-paragraph">
-            Today I design systems for organizations across{" "}
-            <span className="inline-stat interactive" data-value="12" data-suffix="">0</span>{" "}
-            industries &mdash; from healthcare platforms handling patient data
-            to e-commerce engines processing millions of transactions.{" "}
-            <span className="inline-stat interactive" data-value="50" data-suffix="+">0</span>{" "}
-            projects, each one a lesson in what scales and what breaks.
-          </p>
-          <p className="body-paragraph">
-            I think in systems. Not frameworks, not languages &mdash; systems.
-            I architect for scale and ship with precision. Every system I
-            build is meant to last.
-          </p>
-        </div>
+        <p className="zone-b-philosophy body-paragraph">
+          I think in systems. Not frameworks &mdash; systems.
+        </p>
       </div>
 
 
@@ -333,74 +338,78 @@ const About = () => {
 
         /* ═══ ZONE B ══════════════════════════════ */
         .zone-b {
-          display: grid;
-          grid-template-columns: 1.2fr 1fr;
-          gap: 6rem;
-          padding: 8rem 4rem 10rem;
-          max-width: 1400px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 0 4rem 10rem;
+          max-width: 1200px;
           margin: 0 auto;
-          align-items: start;
         }
 
-        .zone-b-left {
-          position: relative;
+        .zone-b-stats {
+          display: flex;
+          align-items: center;
+          gap: 4rem;
+          margin-bottom: 4rem;
         }
 
-        .zone-b-right {
-          padding-top: 8rem;
+        .stat-block {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.75rem;
         }
 
-        .pull-quote {
-          font-family: 'Cormorant Garamond', var(--font-serif);
-          font-size: clamp(2rem, 4vw, 3.5rem);
-          font-weight: 300;
-          font-style: italic;
-          color: rgba(255, 255, 255, 0.7);
-          line-height: 1.3;
-          margin: 0;
-          padding: 0;
-          border: none;
-        }
-
-        .pull-quote-word-wrap {
-          display: inline-block;
-          overflow: hidden;
-          vertical-align: bottom;
-        }
-
-        .pull-quote-word {
-          display: inline-block;
-          will-change: transform, opacity, filter;
-          opacity: 0;
-        }
-
-        .body-paragraph {
-          font-family: 'Cormorant Garamond', var(--font-serif);
-          font-size: clamp(1rem, 1.5vw, 1.2rem);
-          font-weight: 400;
-          color: rgba(255, 255, 255, 0.5);
-          line-height: 1.8;
-          margin: 0 0 2rem;
-          opacity: 0;
-        }
-
-        .body-paragraph:last-child {
-          margin-bottom: 0;
-        }
-
-        .inline-stat {
+        .stat-number {
           font-family: 'Space Grotesk', var(--font-display);
-          font-size: clamp(1.8rem, 3vw, 2.5rem);
+          font-size: clamp(3rem, 6vw, 5rem);
           font-weight: 700;
           color: #fff;
           line-height: 1;
-          vertical-align: baseline;
           cursor: default;
           transition: text-shadow 0.3s ease;
         }
 
-        .inline-stat:hover {
-          text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        .stat-number:hover {
+          text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-label {
+          font-family: var(--font-mono);
+          font-size: 0.65rem;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-divider {
+          width: 1px;
+          height: 4rem;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .inline-stat {
+          font-family: 'Space Grotesk', var(--font-display);
+          font-size: inherit;
+          font-weight: inherit;
+          color: inherit;
+          line-height: inherit;
+        }
+
+        .zone-b-philosophy {
+          font-family: 'Cormorant Garamond', var(--font-serif);
+          font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+          font-weight: 400;
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.4);
+          line-height: 1.6;
+          margin: 0;
+          text-align: center;
+          opacity: 0;
+        }
+
+        .body-paragraph {
+          opacity: 0;
         }
 
         /* ── Responsive ──────────────────────────── */
@@ -410,8 +419,7 @@ const About = () => {
           }
 
           .zone-b {
-            padding: 6rem 2.5rem 8rem;
-            gap: 4rem;
+            padding: 0 2.5rem 8rem;
           }
 
           .about-label {
@@ -435,17 +443,15 @@ const About = () => {
           }
 
           .zone-b {
-            grid-template-columns: 1fr;
-            padding: 4rem 1.5rem 6rem;
-            gap: 3rem;
+            padding: 0 1.5rem 6rem;
           }
 
-          .zone-b-right {
-            padding-top: 0;
+          .zone-b-stats {
+            gap: 2rem;
           }
 
-          .pull-quote {
-            font-size: clamp(1.6rem, 6vw, 2.2rem);
+          .stat-divider {
+            height: 3rem;
           }
         }
       `}</style>
