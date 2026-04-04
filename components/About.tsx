@@ -163,18 +163,24 @@ const About = () => {
           </div>
         </div>
 
-        {/* ── Dual Marquee Strip ── */}
+        {/* ── Triple Marquee Strip ── */}
         <div className="marquee-strip">
           <div className="marquee-track marquee-forward">
-            <span className="marquee-content marquee-bold">{MARQUEE.repeat(4)}</span>
+            <span className="marquee-content marquee-bold">{MARQUEE.repeat(6)}</span>
             <span className="marquee-content marquee-bold" aria-hidden="true">
-              {MARQUEE.repeat(4)}
+              {MARQUEE.repeat(6)}
             </span>
           </div>
           <div className="marquee-track marquee-reverse">
-            <span className="marquee-content">{MARQUEE_ALT.repeat(4)}</span>
-            <span className="marquee-content" aria-hidden="true">
-              {MARQUEE_ALT.repeat(4)}
+            <span className="marquee-content marquee-bold marquee-outline">{MARQUEE_ALT.repeat(6)}</span>
+            <span className="marquee-content marquee-bold marquee-outline" aria-hidden="true">
+              {MARQUEE_ALT.repeat(6)}
+            </span>
+          </div>
+          <div className="marquee-track marquee-forward-slow">
+            <span className="marquee-content marquee-bold">{MARQUEE.repeat(6)}</span>
+            <span className="marquee-content marquee-bold" aria-hidden="true">
+              {MARQUEE.repeat(6)}
             </span>
           </div>
         </div>
@@ -266,15 +272,15 @@ const About = () => {
         .marquee-strip {
           min-height: 60vh;
           padding: 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           overflow: hidden;
           opacity: 0;
           margin: 20vh -4rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          gap: 1.5rem;
+          gap: 0.5rem;
         }
 
         .marquee-track {
@@ -283,30 +289,42 @@ const About = () => {
         }
 
         .marquee-forward {
-          animation: marquee-left 50s linear infinite;
+          animation: marquee-left 40s linear infinite;
         }
 
         .marquee-reverse {
-          animation: marquee-right 60s linear infinite;
+          animation: marquee-right 45s linear infinite;
+        }
+
+        .marquee-forward-slow {
+          animation: marquee-left 50s linear infinite;
         }
 
         .marquee-content {
-          font-family: var(--font-mono);
-          font-size: clamp(0.75rem, 1.2vw, 1rem);
-          letter-spacing: 0.02em;
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(6rem, 16vw, 14rem);
+          font-weight: 700;
+          letter-spacing: -0.03em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.5);
+          color: rgba(255, 255, 255, 0.9);
           white-space: nowrap;
-          padding: 0 0.5rem;
+          padding: 0;
+          line-height: 1.05;
         }
 
         .marquee-bold {
-          font-family: var(--font-sans, "Space Grotesk", sans-serif);
-          font-size: clamp(3rem, 6vw, 5.5rem);
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(6rem, 16vw, 14rem);
           font-weight: 700;
           letter-spacing: -0.03em;
           color: rgba(255, 255, 255, 0.9);
           text-transform: uppercase;
+          line-height: 1.05;
+        }
+
+        .marquee-outline {
+          color: transparent;
+          -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.7);
         }
 
         @keyframes marquee-left {
