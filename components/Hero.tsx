@@ -68,7 +68,7 @@ const Hero = () => {
     const lightChars = gsap.utils.toArray<HTMLElement>(".hero-light-char");
 
     // === Intro: character-level stagger animation ===
-    const introTl = gsap.timeline({ delay: 2.2 });
+    const introTl = gsap.timeline({ delay: 1.2 });
 
     // Fade in the tagline container first (it starts opacity:0)
     introTl.set(".hero-tagline", { opacity: 1 });
@@ -76,14 +76,14 @@ const Hero = () => {
     // Stagger each character in
     introTl.fromTo(
       chars,
-      { opacity: 0, y: 18, rotateX: -60 },
+      { opacity: 0, y: 14, rotateX: -45 },
       {
         opacity: 1,
         y: 0,
         rotateX: 0,
-        duration: 0.6,
+        duration: 0.4,
         ease: "power3.out",
-        stagger: 0.035,
+        stagger: 0.022,
       },
       0,
     );
@@ -92,15 +92,15 @@ const Hero = () => {
     introTl.fromTo(
       ".hero-scroll-line-wrap",
       { opacity: 0 },
-      { opacity: 1, duration: 0.8, ease: "power2.out" },
-      0.8,
+      { opacity: 1, duration: 0.5, ease: "power2.out" },
+      0.5,
     );
 
     introTl.fromTo(
       ".scroll-cue",
       { opacity: 0, y: -10 },
-      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-      "-=0.3",
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+      "-=0.2",
     );
 
     // === Random glow on "light" characters ===
@@ -122,10 +122,10 @@ const Hero = () => {
     gsap.to(".scroll-cue-line", {
       y: 24,
       opacity: 0,
-      duration: 1.2,
+      duration: 0.8,
       ease: "power2.in",
       repeat: -1,
-      repeatDelay: 0.6,
+      repeatDelay: 0.3,
     });
 
     // === Scroll-responsive: letter-spacing shift on scroll ===
@@ -165,7 +165,7 @@ const Hero = () => {
             gsap.to(containerRef.current, {
               opacity: 0,
               scale: 0.97,
-              duration: 0.5,
+              duration: 0.3,
               ease: "power2.inOut",
               onComplete: () => {
                 if (containerRef.current) {
@@ -186,7 +186,7 @@ const Hero = () => {
                 window.dispatchEvent(new Event("revealAbout"));
 
                 // Re-enable scrolling after about is revealed
-                gsap.delayedCall(0.3, () => {
+                gsap.delayedCall(0.15, () => {
                   if (lenis) lenis.start();
                   isTransitioning.current = false;
                 });
@@ -202,7 +202,7 @@ const Hero = () => {
             gsap.to(containerRef.current, {
               opacity: 1,
               scale: 1,
-              duration: 0.4,
+              duration: 0.25,
               ease: "power2.out",
             });
           }
@@ -326,7 +326,7 @@ const Hero = () => {
             rgba(255, 255, 255, 0.6),
             rgba(255, 255, 255, 0)
           );
-          animation: linePulse 2s ease-in-out infinite;
+          animation: linePulse 1.4s ease-in-out infinite;
         }
 
         @keyframes linePulse {

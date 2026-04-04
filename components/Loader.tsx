@@ -3,8 +3,8 @@ import * as THREE from "three";
 
 const Loader = ({
   text = "SAI KIRAN REDDY",
-  delay = 0.1,
-  duration = 0.6,
+  delay = 0.055,
+  duration = 0.35,
   audioStartTime = 0,
   audioEndTime = undefined,
   onFinish,
@@ -44,7 +44,7 @@ const Loader = ({
   const zoomState = useRef({
     animating: false,
     startTime: 0,
-    duration: 2000,
+    duration: 1000,
   });
 
   useEffect(() => {

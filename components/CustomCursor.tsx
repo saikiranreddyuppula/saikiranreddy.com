@@ -14,14 +14,14 @@ const CustomCursor = () => {
       gsap.to(cursor, {
         x: e.clientX,
         y: e.clientY,
-        duration: 0.1,
+        duration: 0.08,
         ease: 'power2.out',
       });
 
       gsap.to(follower, {
         x: e.clientX,
         y: e.clientY,
-        duration: 0.35,
+        duration: 0.2,
         ease: 'power3.out',
       });
     };

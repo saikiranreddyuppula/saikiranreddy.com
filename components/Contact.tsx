@@ -45,13 +45,13 @@ const Contact = () => {
       // 1. Label reveal
       gsap.fromTo(
         ".contact-reveal",
-        { y: 40, opacity: 0 },
+        { y: 25, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.8,
+          duration: 0.5,
           ease: "power3.out",
-          stagger: 0.12,
+          stagger: 0.08,
         }
       );
 
@@ -65,15 +65,15 @@ const Contact = () => {
           inner,
           {
             y: "110%",
-            rotateX: 25,
+            rotateX: 20,
             opacity: 0,
           },
           {
             y: "0%",
             rotateX: 0,
             opacity: 1,
-            duration: 0.9,
-            delay: 0.3 + i * 0.12,
+            duration: 0.55,
+            delay: 0.15 + i * 0.08,
             ease: "power4.out",
           }
         );
@@ -85,35 +85,35 @@ const Contact = () => {
         { scaleX: 0 },
         {
           scaleX: 1,
-          duration: 1.5,
+          duration: 0.8,
           ease: "power3.inOut",
-          delay: 0.7,
+          delay: 0.35,
         }
       );
 
       // 4. CTA shimmer entrance
       gsap.fromTo(
         ".contact-cta",
-        { y: 30, opacity: 0 },
+        { y: 20, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.8,
+          duration: 0.5,
           ease: "power3.out",
-          delay: 0.9,
+          delay: 0.45,
         }
       );
 
       // 5. Tagline
       gsap.fromTo(
         ".contact-tagline",
-        { y: 20, opacity: 0 },
+        { y: 15, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.8,
+          duration: 0.5,
           ease: "power3.out",
-          delay: 1.1,
+          delay: 0.55,
         }
       );
 
@@ -121,14 +121,14 @@ const Contact = () => {
       const footerItems = gsap.utils.toArray<HTMLElement>(".footer-stagger");
       gsap.fromTo(
         footerItems,
-        { y: 20, opacity: 0 },
+        { y: 15, opacity: 0 },
         {
           y: 0,
           opacity: 1,
-          duration: 0.6,
+          duration: 0.4,
           ease: "power3.out",
-          stagger: 0.1,
-          delay: 1.2,
+          stagger: 0.06,
+          delay: 0.6,
         }
       );
     }, sectionRef);
@@ -160,14 +160,14 @@ const Contact = () => {
         gsap.to(btn, {
           x: pullX,
           y: pullY,
-          duration: 0.4,
+          duration: 0.25,
           ease: "power2.out",
         });
       } else {
         gsap.to(btn, {
           x: 0,
           y: 0,
-          duration: 0.6,
+          duration: 0.4,
           ease: "elastic.out(1, 0.4)",
         });
       }
@@ -177,7 +177,7 @@ const Contact = () => {
       gsap.to(btn, {
         x: 0,
         y: 0,
-        duration: 0.6,
+        duration: 0.4,
         ease: "elastic.out(1, 0.4)",
       });
     };
@@ -204,7 +204,7 @@ const Contact = () => {
         {
           x: "200%",
           opacity: 0,
-          duration: 0.7,
+          duration: 0.45,
           ease: "power2.out",
         }
       );
@@ -450,7 +450,7 @@ const Contact = () => {
             transparent 70%
           );
           pointer-events: none;
-          animation: contactGlowPulse 6s ease-in-out infinite;
+          animation: contactGlowPulse 4s ease-in-out infinite;
           z-index: 0;
         }
 
@@ -519,7 +519,7 @@ const Contact = () => {
           gap: 1rem;
           padding: 1.25rem 2.5rem;
           border: 1px solid rgba(255, 255, 255, 0.2);
-          transition: border-color 0.4s ease, box-shadow 0.4s ease;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease;
           position: relative;
           overflow: hidden;
           will-change: transform;
@@ -531,7 +531,7 @@ const Contact = () => {
           inset: 0;
           background: #fff;
           transform: translateX(-101%);
-          transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+          transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
           z-index: 0;
         }
 
