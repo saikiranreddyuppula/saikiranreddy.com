@@ -36,8 +36,8 @@ const About = () => {
     let rafId: number;
 
     const parallaxLoop = () => {
-      smoothMouse.x += (mouseRef.current.x - smoothMouse.x) * 0.04;
-      smoothMouse.y += (mouseRef.current.y - smoothMouse.y) * 0.04;
+      smoothMouse.x += (mouseRef.current.x - smoothMouse.x) * 0.08;
+      smoothMouse.y += (mouseRef.current.y - smoothMouse.y) * 0.08;
       if (statementEl) {
         statementEl.style.transform = `translate(${smoothMouse.x * 8}px, ${smoothMouse.y * 5}px)`;
       }
@@ -58,7 +58,7 @@ const About = () => {
       tl.fromTo(
         sectionLabel,
         { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" },
+        { opacity: 1, x: 0, duration: 0.35, ease: "power2.out" },
         0,
       );
 
@@ -68,17 +68,17 @@ const About = () => {
           line,
           {
             clipPath: "inset(100% 0% 0% 0%)",
-            y: 30,
+            y: 20,
             opacity: 0,
           },
           {
             clipPath: "inset(0% 0% 0% 0%)",
             y: 0,
             opacity: 1,
-            duration: 0.7,
+            duration: 0.45,
             ease: "power3.out",
           },
-          0.15 + i * 0.15,
+          0.1 + i * 0.1,
         );
       });
 
@@ -93,7 +93,7 @@ const About = () => {
             repeat: -1,
             yoyo: true,
           },
-          0.9,
+          0.5,
         );
       }
 
@@ -143,11 +143,11 @@ const About = () => {
       bodyParagraphs.forEach((p) => {
         gsap.fromTo(
           p,
-          { opacity: 0, y: 30 },
+          { opacity: 0, y: 20 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.8,
+            duration: 0.5,
             ease: "power3.out",
             scrollTrigger: {
               trigger: p,
@@ -167,7 +167,7 @@ const About = () => {
 
         gsap.to(proxy, {
           val: target,
-          duration: 1.2,
+          duration: 0.7,
           ease: "power2.out",
           onUpdate: () => {
             el.textContent = Math.round(proxy.val) + suffix;

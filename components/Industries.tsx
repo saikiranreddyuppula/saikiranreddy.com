@@ -73,29 +73,29 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
             gsap.to(desc, {
                 clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
-                duration: 0.6,
-                delay: 0.1,
+                duration: 0.35,
+                delay: 0.05,
                 ease: 'power3.out',
             });
             // Tags stagger in
             gsap.to(tags, {
                 clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
-                duration: 0.5,
-                delay: 0.25,
+                duration: 0.3,
+                delay: 0.12,
                 ease: 'power3.out',
             });
         } else {
             gsap.to(desc, {
                 clipPath: 'inset(0% 100% 0% 0%)',
                 opacity: 0,
-                duration: 0.35,
+                duration: 0.2,
                 ease: 'power2.inOut',
             });
             gsap.to(tags, {
                 clipPath: 'inset(0% 100% 0% 0%)',
                 opacity: 0,
-                duration: 0.3,
+                duration: 0.18,
                 ease: 'power2.inOut',
             });
         }
@@ -175,7 +175,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     opacity: 0;
                     pointer-events: none;
                     z-index: 0;
-                    transition: opacity 0.5s ease;
+                    transition: opacity 0.25s ease;
                 }
 
                 .is-active .ind-row-light {
@@ -197,7 +197,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     opacity: 0;
                     pointer-events: none;
                     z-index: 5;
-                    transition: opacity 0.4s ease;
+                    transition: opacity 0.2s ease;
                 }
 
                 .is-active .ind-row-rule-glow {
@@ -218,7 +218,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     pointer-events: none;
                     user-select: none;
                     z-index: 0;
-                    transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                    transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
                     letter-spacing: -0.05em;
                 }
 
@@ -245,7 +245,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     letter-spacing: 0.15em;
                     color: rgba(255, 255, 255, 0.2);
                     min-width: 2.5rem;
-                    transition: color 0.5s ease;
+                    transition: color 0.25s ease;
                     padding-top: 0.3rem;
                 }
 
@@ -262,7 +262,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     flex: 1;
                     line-height: 1.1;
                     letter-spacing: -0.02em;
-                    transition: text-shadow 0.6s ease;
+                    transition: text-shadow 0.3s ease;
                     display: flex;
                     flex-wrap: wrap;
                 }
@@ -276,7 +276,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                 .ind-char {
                     display: inline-block;
                     color: rgba(255, 255, 255, 0.4);
-                    transition: color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    transition: color 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
 
                 .is-active .ind-char {
@@ -287,8 +287,8 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                 .ind-row-arrow {
                     color: rgba(255, 255, 255, 0.08);
                     transform: translate(-8px, 8px) rotate(0deg);
-                    transition: color 0.5s ease,
-                                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                    transition: color 0.25s ease,
+                                transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                     flex-shrink: 0;
                     align-self: center;
                 }
@@ -339,7 +339,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     border: 1px solid rgba(255, 255, 255, 0.08);
                     padding: 0.35rem 0.75rem;
                     border-radius: 0;
-                    transition: border-color 0.4s ease, color 0.4s ease;
+                    transition: border-color 0.2s ease, color 0.2s ease;
                 }
 
                 .is-active .ind-row-tag {
@@ -413,8 +413,8 @@ const Industries = () => {
             // 1. Label slides in
             gsap.fromTo(
                 '.ind-label',
-                { opacity: 0, x: -30 },
-                { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }
+                { opacity: 0, x: -20 },
+                { opacity: 1, x: 0, duration: 0.4, ease: 'power3.out' }
             );
 
             // 2. Title lines reveal with clip-path (like About section)
@@ -426,8 +426,8 @@ const Industries = () => {
                     {
                         clipPath: 'inset(0% 0% 0% 0%)',
                         opacity: 1,
-                        duration: 0.9,
-                        delay: 0.2 + i * 0.15,
+                        duration: 0.5,
+                        delay: 0.1 + i * 0.1,
                         ease: 'power3.out',
                     }
                 );
@@ -441,8 +441,8 @@ const Industries = () => {
                     { scaleX: 0 },
                     {
                         scaleX: 1,
-                        duration: 1,
-                        delay: 0.5 + i * 0.08,
+                        duration: 0.6,
+                        delay: 0.25 + i * 0.05,
                         ease: 'power3.inOut',
                     }
                 );
@@ -453,12 +453,12 @@ const Industries = () => {
             rows.forEach((row, i) => {
                 gsap.fromTo(
                     row.querySelector('.ind-row-content'),
-                    { opacity: 0, y: 30 },
+                    { opacity: 0, y: 20 },
                     {
                         opacity: 1,
                         y: 0,
-                        duration: 0.8,
-                        delay: 0.6 + i * 0.1,
+                        duration: 0.45,
+                        delay: 0.3 + i * 0.06,
                         ease: 'power3.out',
                     }
                 );
@@ -467,8 +467,8 @@ const Industries = () => {
             // 5. Counter
             gsap.fromTo(
                 '.ind-counter',
-                { opacity: 0, y: 15 },
-                { opacity: 1, y: 0, duration: 0.6, delay: 1.4, ease: 'power2.out' }
+                { opacity: 0, y: 10 },
+                { opacity: 1, y: 0, duration: 0.4, delay: 0.7, ease: 'power2.out' }
             );
         }, containerRef);
 

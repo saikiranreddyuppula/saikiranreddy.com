@@ -20,7 +20,7 @@ const Navbar = () => {
   // Track which section is in view
   useEffect(() => {
     // Delay visibility so it doesn't flash during loader
-    const showTimer = setTimeout(() => setVisible(true), 3000);
+    const showTimer = setTimeout(() => setVisible(true), 1800);
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -60,7 +60,7 @@ const Navbar = () => {
 
       if (lenis) {
         lenis.scrollTo(el, {
-          duration: 2,
+          duration: 1,
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
         });
       } else {
@@ -108,7 +108,7 @@ const Navbar = () => {
           transform: translateY(-50%);
           z-index: 1000;
           opacity: 0;
-          transition: opacity 0.8s ease;
+          transition: opacity 0.4s ease;
           pointer-events: none;
         }
 
@@ -134,7 +134,7 @@ const Navbar = () => {
           border-radius: 50%;
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.5);
-          transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
           pointer-events: none;
         }
 
