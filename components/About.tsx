@@ -264,15 +264,17 @@ const About = () => {
 
         /* ── Dual Marquee ──────────────────────────── */
         .marquee-strip {
-          padding: 1.5rem 0;
+          min-height: 60vh;
+          padding: 0;
           border-top: 1px solid rgba(255, 255, 255, 0.08);
           border-bottom: 1px solid rgba(255, 255, 255, 0.08);
           overflow: hidden;
           opacity: 0;
-          margin: 0 -4rem;
+          margin: 20vh -4rem;
           display: flex;
           flex-direction: column;
-          gap: 0.8rem;
+          justify-content: center;
+          gap: 1.5rem;
         }
 
         .marquee-track {
