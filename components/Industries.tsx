@@ -32,7 +32,7 @@ const industries = [
     {
         name: "Generative AI",
         number: "05",
-        description: "ML pipelines, intelligent automation systems, and Generative AI-driven products from prototype to production at scale.",
+        description: "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
         tags: ["ML Pipelines", "NLP", "Computer Vision"],
     },
     {
@@ -46,18 +46,16 @@ const industries = [
 interface RowProps {
     industry: typeof industries[0];
     index: number;
-    isExpanded: boolean;
+    isActive: boolean;
     onEnter: () => void;
     onLeave: () => void;
 }
 
-const IndustryRow = ({ industry, index, isExpanded, onEnter, onLeave }: RowProps) => {
+const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) => {
     const rowRef = useRef<HTMLDivElement>(null);
     const descRef = useRef<HTMLDivElement>(null);
-    const lineRef = useRef<HTMLDivElement>(null);
     const tagsRef = useRef<HTMLDivElement>(null);
-    const glowRef = useRef<HTMLDivElement>(null);
-    const [mouseX, setMouseX] = useState(0);
+    const [mouseX, setMouseX] = useState(50);
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         if (!rowRef.current) return;
@@ -67,281 +65,315 @@ const IndustryRow = ({ industry, index, isExpanded, onEnter, onLeave }: RowProps
 
     useEffect(() => {
         const desc = descRef.current;
-        const line = lineRef.current;
         const tags = tagsRef.current;
-        const glow = glowRef.current;
-        if (!desc || !line || !tags || !glow) return;
+        if (!desc || !tags) return;
 
-        if (isExpanded) {
+        if (isActive) {
+            // Description wipes in via clip-path
             gsap.to(desc, {
-                height: 'auto',
+                clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
-                y: 0,
-                duration: 0.5,
-                ease: 'power3.out',
-            });
-            gsap.to(tags, {
-                height: 'auto',
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
+                duration: 0.6,
                 delay: 0.1,
                 ease: 'power3.out',
             });
-            gsap.to(line, {
-                scaleX: 1,
-                duration: 0.8,
-                ease: 'power3.inOut',
-            });
-            gsap.to(glow, {
+            // Tags stagger in
+            gsap.to(tags, {
+                clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
-                duration: 0.4,
+                duration: 0.5,
+                delay: 0.25,
+                ease: 'power3.out',
             });
         } else {
             gsap.to(desc, {
-                height: 0,
+                clipPath: 'inset(0% 100% 0% 0%)',
                 opacity: 0,
-                y: 10,
-                duration: 0.4,
+                duration: 0.35,
                 ease: 'power2.inOut',
             });
             gsap.to(tags, {
-                height: 0,
-                opacity: 0,
-                y: 10,
-                duration: 0.3,
-                ease: 'power2.inOut',
-            });
-            gsap.to(line, {
-                scaleX: 0,
-                duration: 0.5,
-                ease: 'power2.inOut',
-            });
-            gsap.to(glow, {
+                clipPath: 'inset(0% 100% 0% 0%)',
                 opacity: 0,
                 duration: 0.3,
+                ease: 'power2.inOut',
             });
         }
-    }, [isExpanded]);
+    }, [isActive]);
 
     return (
         <div
             ref={rowRef}
-            className={`industry-row interactive ${isExpanded ? 'is-expanded' : ''}`}
+            className={`ind-row interactive ${isActive ? 'is-active' : ''}`}
             onMouseEnter={onEnter}
             onMouseLeave={onLeave}
             onMouseMove={handleMouseMove}
+            data-index={index}
             style={{ '--mouse-x': `${mouseX}%` } as React.CSSProperties}
         >
-            {/* Hover glow that follows mouse horizontally */}
-            <div ref={glowRef} className="row-glow" />
+            {/* Cursor-following light pool */}
+            <div className="ind-row-light" />
 
-            {/* Top border accent line */}
-            <div ref={lineRef} className="row-accent-line" />
+            {/* Rule line glow — illuminates from cursor position */}
+            <div className="ind-row-rule-glow" />
 
-            <div className="row-inner">
-                <div className="row-main">
-                    <span className="row-number">{industry.number}</span>
-                    <h3 className="row-name">{industry.name}</h3>
-                    <span className="row-expand-indicator">
-                        <span className={`expand-line expand-h ${isExpanded ? 'active' : ''}`} />
-                        <span className={`expand-line expand-v ${isExpanded ? 'active' : ''}`} />
-                    </span>
+            {/* Ghost number — massive, behind everything */}
+            <div className="ind-row-ghost" aria-hidden="true">{industry.number}</div>
+
+            {/* Main row content */}
+            <div className="ind-row-content">
+                <div className="ind-row-head">
+                    <span className="ind-row-number">{industry.number}</span>
+                    <h3 className="ind-row-name">
+                        {industry.name.split('').map((char, i) => (
+                            <span key={i} className="ind-char" style={{ transitionDelay: `${i * 0.015}s` }}>
+                                {char === ' ' ? '\u00A0' : char}
+                            </span>
+                        ))}
+                    </h3>
+                    <div className="ind-row-arrow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                            <path d="M7 17L17 7M17 7H9M17 7V15" />
+                        </svg>
+                    </div>
                 </div>
 
-                <div ref={descRef} className="row-description-wrap">
-                    <p className="row-description">{industry.description}</p>
+                {/* Description — clip-path reveal */}
+                <div ref={descRef} className="ind-row-desc-wrap">
+                    <p className="ind-row-desc">{industry.description}</p>
                 </div>
 
-                <div ref={tagsRef} className="row-tags-wrap">
-                    <div className="row-tags">
+                {/* Tags — clip-path reveal */}
+                <div ref={tagsRef} className="ind-row-tags-wrap">
+                    <div className="ind-row-tags">
                         {industry.tags.map((tag, i) => (
-                            <span key={i} className="row-tag">{tag}</span>
+                            <span key={i} className="ind-row-tag">{tag}</span>
                         ))}
                     </div>
                 </div>
             </div>
 
+            {/* Bottom rule line */}
+            <div className="ind-row-rule" />
+
             <style jsx>{`
-                .industry-row {
+                .ind-row {
                     position: relative;
                     cursor: pointer;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-                    transition: background 0.4s ease;
                     overflow: hidden;
                 }
 
-                .industry-row:first-child {
-                    border-top: 1px solid rgba(255, 255, 255, 0.07);
-                }
-
-                .row-glow {
+                /* Cursor-following light pool */
+                .ind-row-light {
                     position: absolute;
                     inset: 0;
                     background: radial-gradient(
                         600px ellipse at var(--mouse-x) 50%,
-                        rgba(255, 255, 255, 0.03),
-                        transparent 70%
+                        rgba(255, 255, 255, 0.04),
+                        transparent 60%
                     );
                     opacity: 0;
                     pointer-events: none;
                     z-index: 0;
+                    transition: opacity 0.5s ease;
                 }
 
-                .row-accent-line {
+                .is-active .ind-row-light {
+                    opacity: 1;
+                }
+
+                /* Rule line glow — brightens near cursor */
+                .ind-row-rule-glow {
                     position: absolute;
                     top: 0;
                     left: 0;
                     right: 0;
                     height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-                    transform: scaleX(0);
-                    transform-origin: center;
-                    z-index: 2;
+                    background: radial-gradient(
+                        300px ellipse at var(--mouse-x) 50%,
+                        rgba(255, 255, 255, 0.4),
+                        transparent 70%
+                    );
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 5;
+                    transition: opacity 0.4s ease;
                 }
 
-                .row-inner {
-                    position: relative;
-                    z-index: 1;
-                    padding: 2.5rem 0;
+                .is-active .ind-row-rule-glow {
+                    opacity: 1;
                 }
 
-                .row-main {
-                    display: flex;
-                    align-items: center;
-                    gap: 2rem;
-                }
-
-                .row-number {
-                    font-family: var(--font-mono);
-                    font-size: 0.75rem;
-                    color: rgba(255, 255, 255, 0.3);
-                    letter-spacing: 0.1em;
-                    min-width: 2rem;
-                    transition: color 0.4s ease;
-                }
-
-                .is-expanded .row-number {
-                    color: rgba(255, 255, 255, 0.7);
-                }
-
-                .row-name {
+                /* Ghost number */
+                .ind-row-ghost {
+                    position: absolute;
+                    right: -2%;
+                    top: 50%;
+                    transform: translateY(-50%);
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(2rem, 4.5vw, 4rem);
+                    font-size: clamp(8rem, 18vw, 16rem);
                     font-weight: 300;
-                    color: rgba(255, 255, 255, 0.5);
+                    line-height: 1;
+                    color: rgba(255, 255, 255, 0.0);
+                    pointer-events: none;
+                    user-select: none;
+                    z-index: 0;
+                    transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                    letter-spacing: -0.05em;
+                }
+
+                .is-active .ind-row-ghost {
+                    color: rgba(255, 255, 255, 0.03);
+                }
+
+                /* Content */
+                .ind-row-content {
+                    position: relative;
+                    z-index: 2;
+                    padding: 2.75rem 0;
+                }
+
+                .ind-row-head {
+                    display: flex;
+                    align-items: baseline;
+                    gap: 2.5rem;
+                }
+
+                .ind-row-number {
+                    font-family: var(--font-mono);
+                    font-size: 0.7rem;
+                    letter-spacing: 0.15em;
+                    color: rgba(255, 255, 255, 0.2);
+                    min-width: 2.5rem;
+                    transition: color 0.5s ease;
+                    padding-top: 0.3rem;
+                }
+
+                .is-active .ind-row-number {
+                    color: rgba(255, 255, 255, 0.6);
+                }
+
+                .ind-row-name {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(2.5rem, 6vw, 5.5rem);
+                    font-weight: 300;
+                    color: rgba(255, 255, 255, 0.4);
                     margin: 0;
                     flex: 1;
-                    line-height: 1.2;
-                    transition: color 0.4s ease, letter-spacing 0.4s ease;
-                    letter-spacing: -0.01em;
-                }
-
-                .is-expanded .row-name {
-                    color: #fff;
-                    letter-spacing: 0.02em;
-                }
-
-                .row-expand-indicator {
-                    position: relative;
-                    width: 16px;
-                    height: 16px;
-                    flex-shrink: 0;
-                }
-
-                .expand-line {
-                    position: absolute;
-                    background: rgba(255, 255, 255, 0.4);
-                    transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1), background 0.4s ease;
-                }
-
-                .expand-h {
-                    top: 50%;
-                    left: 0;
-                    width: 100%;
-                    height: 1px;
-                    transform: translateY(-50%);
-                }
-
-                .expand-v {
-                    top: 0;
-                    left: 50%;
-                    width: 1px;
-                    height: 100%;
-                    transform: translateX(-50%) scaleY(1);
-                }
-
-                .expand-v.active {
-                    transform: translateX(-50%) scaleY(0);
-                }
-
-                .is-expanded .expand-line {
-                    background: rgba(255, 255, 255, 0.7);
-                }
-
-                .row-description-wrap {
-                    height: 0;
-                    opacity: 0;
-                    overflow: hidden;
-                    transform: translateY(10px);
-                }
-
-                .row-description {
-                    font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(1rem, 1.3vw, 1.15rem);
-                    font-style: italic;
-                    line-height: 1.7;
-                    color: rgba(255, 255, 255, 0.5);
-                    margin: 0;
-                    padding: 1.5rem 0 0 4rem;
-                    max-width: 600px;
-                }
-
-                .row-tags-wrap {
-                    height: 0;
-                    opacity: 0;
-                    overflow: hidden;
-                    transform: translateY(10px);
-                }
-
-                .row-tags {
+                    line-height: 1.1;
+                    letter-spacing: -0.02em;
+                    transition: text-shadow 0.6s ease;
                     display: flex;
-                    gap: 0.75rem;
-                    padding: 1.25rem 0 0.5rem 4rem;
                     flex-wrap: wrap;
                 }
 
-                .row-tag {
-                    font-family: var(--font-mono);
-                    font-size: 0.65rem;
-                    letter-spacing: 0.12em;
-                    text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.35);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    padding: 0.4rem 0.85rem;
-                    transition: border-color 0.3s ease, color 0.3s ease;
+                .is-active .ind-row-name {
+                    text-shadow: 0 0 60px rgba(255, 255, 255, 0.15),
+                                 0 0 120px rgba(255, 255, 255, 0.05);
                 }
 
-                .is-expanded .row-tag {
-                    border-color: rgba(255, 255, 255, 0.2);
-                    color: rgba(255, 255, 255, 0.5);
+                /* Per-character color transition */
+                .ind-char {
+                    display: inline-block;
+                    color: rgba(255, 255, 255, 0.4);
+                    transition: color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .is-active .ind-char {
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
+
+                .ind-row-arrow {
+                    color: rgba(255, 255, 255, 0.08);
+                    transform: translate(-8px, 8px) rotate(0deg);
+                    transition: color 0.5s ease,
+                                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                    flex-shrink: 0;
+                    align-self: center;
+                }
+
+                .is-active .ind-row-arrow {
+                    color: rgba(255, 255, 255, 0.4);
+                    transform: translate(0, 0) rotate(0deg);
+                }
+
+                /* Description */
+                .ind-row-desc-wrap {
+                    clip-path: inset(0% 100% 0% 0%);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+
+                .ind-row-desc {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(1rem, 1.4vw, 1.2rem);
+                    font-style: italic;
+                    line-height: 1.7;
+                    color: rgba(255, 255, 255, 0.4);
+                    margin: 0;
+                    padding: 1.25rem 0 0 5rem;
+                    max-width: 600px;
+                }
+
+                /* Tags */
+                .ind-row-tags-wrap {
+                    clip-path: inset(0% 100% 0% 0%);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+
+                .ind-row-tags {
+                    display: flex;
+                    gap: 0.75rem;
+                    padding: 1.25rem 0 0.5rem 5rem;
+                    flex-wrap: wrap;
+                }
+
+                .ind-row-tag {
+                    font-family: var(--font-mono);
+                    font-size: 0.6rem;
+                    letter-spacing: 0.12em;
+                    text-transform: uppercase;
+                    color: rgba(255, 255, 255, 0.25);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    padding: 0.35rem 0.75rem;
+                    border-radius: 0;
+                    transition: border-color 0.4s ease, color 0.4s ease;
+                }
+
+                .is-active .ind-row-tag {
+                    border-color: rgba(255, 255, 255, 0.18);
+                    color: rgba(255, 255, 255, 0.45);
+                }
+
+                /* Rule line */
+                .ind-row-rule {
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.06);
+                    transform-origin: left center;
                 }
 
                 @media (max-width: 768px) {
-                    .row-inner {
-                        padding: 1.75rem 0;
+                    .ind-row-content {
+                        padding: 2rem 0;
                     }
 
-                    .row-main {
+                    .ind-row-head {
                         gap: 1.25rem;
                     }
 
-                    .row-description {
-                        padding-left: 3.25rem;
+                    .ind-row-desc {
+                        padding-left: 3.75rem;
                     }
 
-                    .row-tags {
-                        padding-left: 3.25rem;
+                    .ind-row-tags {
+                        padding-left: 3.75rem;
+                    }
+
+                    .ind-row-ghost {
+                        font-size: 6rem;
+                        right: -5%;
                     }
                 }
             `}</style>
@@ -351,8 +383,7 @@ const IndustryRow = ({ industry, index, isExpanded, onEnter, onLeave }: RowProps
 
 const Industries = () => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const listRef = useRef<HTMLDivElement>(null);
-    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
     // Intersection observer for entrance
@@ -364,7 +395,7 @@ const Industries = () => {
                     observer.disconnect();
                 }
             },
-            { threshold: 0.1 }
+            { threshold: 0.08 }
         );
 
         if (containerRef.current) {
@@ -374,134 +405,157 @@ const Industries = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Entrance animations
+    // Entrance animations — orchestrated sequence
     useEffect(() => {
         if (!isVisible || !containerRef.current) return;
 
         const ctx = gsap.context(() => {
-            // Label entrance
+            // 1. Label slides in
             gsap.fromTo(
-                '.industries-label',
-                { opacity: 0, x: -20 },
-                { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }
+                '.ind-label',
+                { opacity: 0, x: -30 },
+                { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }
             );
 
-            // Title word-by-word reveal
-            const titleWords = gsap.utils.toArray<HTMLElement>('.title-word');
-            titleWords.forEach((word, i) => {
-                const inner = word.querySelector('.title-word-inner');
-                if (!inner) return;
+            // 2. Title lines reveal with clip-path (like About section)
+            const titleLines = gsap.utils.toArray<HTMLElement>('.ind-title-line');
+            titleLines.forEach((line, i) => {
                 gsap.fromTo(
-                    inner,
-                    { y: '110%', rotateX: 20, opacity: 0 },
+                    line,
+                    { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 },
                     {
-                        y: '0%',
-                        rotateX: 0,
+                        clipPath: 'inset(0% 0% 0% 0%)',
                         opacity: 1,
-                        duration: 0.8,
-                        delay: 0.2 + i * 0.08,
-                        ease: 'power4.out',
+                        duration: 0.9,
+                        delay: 0.2 + i * 0.15,
+                        ease: 'power3.out',
                     }
                 );
             });
 
-            // Rows stagger entrance
-            const rows = gsap.utils.toArray<HTMLElement>('.industry-row');
-            gsap.fromTo(
-                rows,
-                { opacity: 0, y: 40 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.7,
-                    stagger: 0.08,
-                    delay: 0.5,
-                    ease: 'power3.out',
-                }
-            );
+            // 3. Rule lines draw themselves in — staggered with scroll
+            const rules = gsap.utils.toArray<HTMLElement>('.ind-row-rule');
+            rules.forEach((rule, i) => {
+                gsap.fromTo(
+                    rule,
+                    { scaleX: 0 },
+                    {
+                        scaleX: 1,
+                        duration: 1,
+                        delay: 0.5 + i * 0.08,
+                        ease: 'power3.inOut',
+                    }
+                );
+            });
 
-            // Counter reveal
+            // 4. Rows fade up in sequence
+            const rows = gsap.utils.toArray<HTMLElement>('.ind-row');
+            rows.forEach((row, i) => {
+                gsap.fromTo(
+                    row.querySelector('.ind-row-content'),
+                    { opacity: 0, y: 30 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        delay: 0.6 + i * 0.1,
+                        ease: 'power3.out',
+                    }
+                );
+            });
+
+            // 5. Counter
             gsap.fromTo(
-                '.industries-counter',
-                { opacity: 0, y: 20 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.6,
-                    delay: 1.0,
-                    ease: 'power2.out',
-                }
+                '.ind-counter',
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.6, delay: 1.4, ease: 'power2.out' }
             );
         }, containerRef);
 
         return () => ctx.revert();
     }, [isVisible]);
 
-    // Parallax scroll effect on the title
+    // Scroll-driven parallax: ghost numbers drift at different rate
     useEffect(() => {
         if (!containerRef.current) return;
 
         const ctx = gsap.context(() => {
-            gsap.to('.industries-title', {
-                y: -60,
+            // Title parallax
+            gsap.to('.ind-title', {
+                y: -50,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: containerRef.current,
                     start: 'top bottom',
                     end: 'bottom top',
-                    scrub: 1,
+                    scrub: 1.5,
                 },
+            });
+
+            // Ghost numbers parallax — each drifts independently
+            const ghosts = gsap.utils.toArray<HTMLElement>('.ind-row-ghost');
+            ghosts.forEach((ghost, i) => {
+                gsap.to(ghost, {
+                    y: -30 - (i * 8),
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: ghost.parentElement,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 2,
+                    },
+                });
             });
         }, containerRef);
 
         return () => ctx.revert();
     }, []);
 
-    const titleText = "From startups to enterprise, I architect solutions that scale.";
-    const titleWords = titleText.split(' ');
-
     return (
-        <section ref={containerRef} id="industries" className="industries-section">
-            <div className="industries-container">
+        <section ref={containerRef} id="industries" className="ind-section">
+            <div className="ind-container">
                 {/* Header */}
-                <div className="industries-header">
-                    <div className="industries-label">
-                        <span className="label-index">02</span>
-                        <span className="label-line"></span>
-                        <span className="label-text">Industries</span>
+                <div className="ind-header">
+                    <div className="ind-label">
+                        <span className="ind-label-index">02</span>
+                        <span className="ind-label-line" />
+                        <span className="ind-label-text">Industries</span>
                     </div>
 
-                    <h2 className="industries-title">
-                        {titleWords.map((word, i) => (
-                            <span key={i} className="title-word">
-                                <span className={`title-word-inner ${i >= 6 ? 'text-accent' : ''}`}>
-                                    {word}
-                                </span>
-                            </span>
-                        ))}
+                    <h2 className="ind-title">
+                        <span className="ind-title-line">
+                            From startups to enterprise,
+                        </span>
+                        <span className="ind-title-line">
+                            I architect solutions{' '}
+                            <em className="ind-title-accent">that scale.</em>
+                        </span>
                     </h2>
                 </div>
 
-                {/* Industry List */}
-                <div ref={listRef} className="industries-list">
+                {/* First rule line */}
+                <div className="ind-row-rule ind-rule-first" />
+
+                {/* Industry Rows */}
+                <div className="ind-list">
                     {industries.map((industry, index) => (
                         <IndustryRow
                             key={index}
                             industry={industry}
                             index={index}
-                            isExpanded={expandedIndex === index}
-                            onEnter={() => setExpandedIndex(index)}
-                            onLeave={() => setExpandedIndex(null)}
+                            isActive={activeIndex === index}
+                            onEnter={() => setActiveIndex(index)}
+                            onLeave={() => setActiveIndex(null)}
                         />
                     ))}
                 </div>
 
-                {/* Bottom counter */}
-                <div className="industries-counter">
-                    <span className="counter-label">Domains of expertise</span>
-                    <span className="counter-number">
-                        {expandedIndex !== null
-                            ? `${String(expandedIndex + 1).padStart(2, '0')} / ${String(industries.length).padStart(2, '0')}`
+                {/* Counter */}
+                <div className="ind-counter">
+                    <span className="ind-counter-label">Domains of expertise</span>
+                    <span className="ind-counter-value">
+                        {activeIndex !== null
+                            ? `${String(activeIndex + 1).padStart(2, '0')} / ${String(industries.length).padStart(2, '0')}`
                             : String(industries.length).padStart(2, '0')
                         }
                     </span>
@@ -509,7 +563,7 @@ const Industries = () => {
             </div>
 
             <style jsx global>{`
-                .industries-section {
+                .ind-section {
                     position: relative;
                     z-index: 1;
                     background: #000;
@@ -519,19 +573,19 @@ const Industries = () => {
                     align-items: center;
                 }
 
-                .industries-container {
-                    max-width: 1200px;
+                .ind-container {
+                    max-width: 1300px;
                     width: 100%;
                     margin: 0 auto;
-                    padding: 8rem 4rem 6rem;
+                    padding: 10rem 4rem 8rem;
                 }
 
-                /* Header */
-                .industries-header {
+                /* ---- Header ---- */
+                .ind-header {
                     margin-bottom: 5rem;
                 }
 
-                .industries-label {
+                .ind-label {
                     display: flex;
                     align-items: center;
                     gap: 1.5rem;
@@ -539,66 +593,66 @@ const Industries = () => {
                     opacity: 0;
                 }
 
-                .industries-label .label-index {
+                .ind-label-index {
                     font-family: var(--font-mono);
-                    font-size: 0.75rem;
+                    font-size: 0.7rem;
                     color: #fff;
                     letter-spacing: 0.1em;
                 }
 
-                .industries-label .label-line {
+                .ind-label-line {
                     width: 40px;
                     height: 1px;
                     background: rgba(255, 255, 255, 0.3);
                 }
 
-                .industries-label .label-text {
+                .ind-label-text {
                     font-family: var(--font-mono);
-                    font-size: 0.75rem;
+                    font-size: 0.7rem;
                     letter-spacing: 0.2em;
                     text-transform: uppercase;
                     color: rgba(255, 255, 255, 0.5);
                 }
 
-                /* Title */
-                .industries-title {
+                /* ---- Title ---- */
+                .ind-title {
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(2rem, 4vw, 3rem);
+                    font-size: clamp(2.5rem, 5vw, 4rem);
                     font-weight: 300;
                     line-height: 1.3;
                     color: #fff;
                     margin: 0;
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 0 0.3em;
-                    perspective: 600px;
+                    flex-direction: column;
                     will-change: transform;
                 }
 
-                .title-word {
-                    display: inline-block;
-                    overflow: hidden;
-                    vertical-align: top;
+                .ind-title-line {
+                    display: block;
+                    clip-path: inset(100% 0% 0% 0%);
+                    opacity: 0;
+                    will-change: clip-path, opacity;
                 }
 
-                .title-word-inner {
-                    display: inline-block;
-                    will-change: transform, opacity;
-                    transform-origin: bottom center;
-                }
-
-                .industries-title .text-accent {
-                    color: rgba(255, 255, 255, 0.5);
+                .ind-title-accent {
+                    color: rgba(255, 255, 255, 0.4);
                     font-style: italic;
                 }
 
-                /* List */
-                .industries-list {
-                    margin-bottom: 4rem;
+                /* ---- List ---- */
+                .ind-list {
+                    margin-bottom: 3rem;
                 }
 
-                /* Counter */
-                .industries-counter {
+                .ind-rule-first {
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.06);
+                    transform-origin: left center;
+                    margin-bottom: 0;
+                }
+
+                /* ---- Counter ---- */
+                .ind-counter {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
@@ -606,38 +660,38 @@ const Industries = () => {
                     padding-top: 2rem;
                 }
 
-                .counter-label {
+                .ind-counter-label {
                     font-family: var(--font-mono);
-                    font-size: 0.7rem;
+                    font-size: 0.65rem;
                     letter-spacing: 0.15em;
                     text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.3);
+                    color: rgba(255, 255, 255, 0.2);
                 }
 
-                .counter-number {
+                .ind-counter-value {
                     font-family: var(--font-mono);
                     font-size: 0.85rem;
                     letter-spacing: 0.1em;
-                    color: rgba(255, 255, 255, 0.5);
+                    color: rgba(255, 255, 255, 0.4);
                     transition: all 0.3s ease;
                 }
 
                 @media (max-width: 1024px) {
-                    .industries-container {
-                        padding: 6rem 2.5rem 5rem;
+                    .ind-container {
+                        padding: 7rem 2.5rem 6rem;
                     }
                 }
 
                 @media (max-width: 768px) {
-                    .industries-container {
+                    .ind-container {
                         padding: 5rem 1.5rem 4rem;
                     }
 
-                    .industries-header {
+                    .ind-header {
                         margin-bottom: 3rem;
                     }
 
-                    .industries-label {
+                    .ind-label {
                         margin-bottom: 1.5rem;
                     }
                 }
