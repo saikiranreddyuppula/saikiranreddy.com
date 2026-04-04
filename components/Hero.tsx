@@ -311,10 +311,10 @@ const Hero = () => {
 
         .hero-scroll-label {
           font-family: var(--font-mono);
-          font-size: 0.6rem;
+          font-size: 0.85rem;
           letter-spacing: 0.25em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(255, 255, 255, 0.4);
           animation: labelFade 2.8s ease-in-out infinite;
         }
 
