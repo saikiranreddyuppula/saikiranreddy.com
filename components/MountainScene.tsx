@@ -101,7 +101,7 @@ class SimplexNoise {
 // Mountain terrain mesh
 const MountainTerrain = () => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
+
   
   const { geometry, heightData } = useMemo(() => {
     const simplex = new SimplexNoise(42);
@@ -232,8 +232,8 @@ const MountainTerrain = () => {
   }, []);
 
   useFrame(({ clock }) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = clock.elapsedTime;
+    if (shaderMaterial) {
+      shaderMaterial.uniforms.uTime.value = clock.elapsedTime;
     }
   });
 
