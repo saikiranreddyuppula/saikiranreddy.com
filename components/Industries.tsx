@@ -55,26 +55,26 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
     const rowRef = useRef<HTMLDivElement>(null);
     const descRef = useRef<HTMLDivElement>(null);
     const tagsRef = useRef<HTMLDivElement>(null);
-    const scanRef = useRef<HTMLDivElement>(null);
+    const [mouseX, setMouseX] = useState(50);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!rowRef.current) return;
+        const rect = rowRef.current.getBoundingClientRect();
+        setMouseX(((e.clientX - rect.left) / rect.width) * 100);
+    }, []);
 
     useEffect(() => {
         const desc = descRef.current;
         const tags = tagsRef.current;
-        const scan = scanRef.current;
-        if (!desc || !tags || !scan) return;
+        if (!desc || !tags) return;
 
         if (isActive) {
-            // Scan line sweeps across
-            gsap.fromTo(scan,
-                { left: '0%', opacity: 1 },
-                { left: '100%', opacity: 0, duration: 0.8, ease: 'power2.inOut' }
-            );
             // Description wipes in via clip-path
             gsap.to(desc, {
                 clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
                 duration: 0.6,
-                delay: 0.15,
+                delay: 0.1,
                 ease: 'power3.out',
             });
             // Tags stagger in
@@ -82,7 +82,7 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                 clipPath: 'inset(0% 0% 0% 0%)',
                 opacity: 1,
                 duration: 0.5,
-                delay: 0.3,
+                delay: 0.25,
                 ease: 'power3.out',
             });
         } else {
@@ -98,7 +98,6 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                 duration: 0.3,
                 ease: 'power2.inOut',
             });
-            gsap.set(scan, { opacity: 0 });
         }
     }, [isActive]);
 
@@ -108,10 +107,15 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
             className={`ind-row interactive ${isActive ? 'is-active' : ''}`}
             onMouseEnter={onEnter}
             onMouseLeave={onLeave}
+            onMouseMove={handleMouseMove}
             data-index={index}
+            style={{ '--mouse-x': `${mouseX}%` } as React.CSSProperties}
         >
-            {/* Horizontal scan line — sweeps on hover */}
-            <div ref={scanRef} className="ind-row-scan" />
+            {/* Cursor-following light pool */}
+            <div className="ind-row-light" />
+
+            {/* Rule line glow — illuminates from cursor position */}
+            <div className="ind-row-rule-glow" />
 
             {/* Ghost number — massive, behind everything */}
             <div className="ind-row-ghost" aria-hidden="true">{industry.number}</div>
@@ -159,24 +163,45 @@ const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) 
                     overflow: hidden;
                 }
 
-                /* Scan line */
-                .ind-row-scan {
+                /* Cursor-following light pool */
+                .ind-row-light {
                     position: absolute;
-                    top: 0;
-                    width: 2px;
-                    height: 100%;
-                    background: linear-gradient(
-                        180deg,
-                        transparent 0%,
-                        rgba(255, 255, 255, 0.6) 20%,
-                        rgba(255, 255, 255, 0.8) 50%,
-                        rgba(255, 255, 255, 0.6) 80%,
-                        transparent 100%
+                    inset: 0;
+                    background: radial-gradient(
+                        600px ellipse at var(--mouse-x) 50%,
+                        rgba(255, 255, 255, 0.04),
+                        transparent 60%
                     );
                     opacity: 0;
                     pointer-events: none;
-                    z-index: 10;
-                    box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.08);
+                    z-index: 0;
+                    transition: opacity 0.5s ease;
+                }
+
+                .is-active .ind-row-light {
+                    opacity: 1;
+                }
+
+                /* Rule line glow — brightens near cursor */
+                .ind-row-rule-glow {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 1px;
+                    background: radial-gradient(
+                        300px ellipse at var(--mouse-x) 50%,
+                        rgba(255, 255, 255, 0.4),
+                        transparent 70%
+                    );
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 5;
+                    transition: opacity 0.4s ease;
+                }
+
+                .is-active .ind-row-rule-glow {
+                    opacity: 1;
                 }
 
                 /* Ghost number */
