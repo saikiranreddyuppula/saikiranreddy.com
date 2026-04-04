@@ -58,13 +58,21 @@ const Navbar = () => {
       const el = document.getElementById(id);
       if (!el) return;
 
+      // Hero is pinned by GSAP with pinSpacing:false, so lenis can't
+      // resolve its scroll offset from the DOM element. Target 0 directly.
+      const target = id === "hero" ? 0 : el;
+
       if (lenis) {
-        lenis.scrollTo(el, {
+        lenis.scrollTo(target, {
           duration: 1,
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
         });
       } else {
-        el.scrollIntoView({ behavior: "smooth" });
+        if (id === "hero") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
       }
     },
     [lenis],
