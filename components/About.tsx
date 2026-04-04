@@ -3,6 +3,12 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
+const STATS = [
+  { value: 8, suffix: "+", label: "Years of engineering" },
+  { value: 50, suffix: "+", label: "Projects shipped" },
+  { value: 12, suffix: "", label: "Industries served" },
+];
+
 const About = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -23,16 +29,16 @@ const About = () => {
       tl.play();
     }
 
-    // Mouse tracking for Zone A parallax
+    // Mouse tracking for parallax
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Smooth parallax loop for Zone A
+    // Smooth parallax loop
     const smoothMouse = { x: 0, y: 0 };
-    const statementEl = containerRef.current.querySelector(".zone-a-text") as HTMLElement;
+    const statementEl = containerRef.current.querySelector(".about-statement") as HTMLElement;
     let rafId: number;
 
     const parallaxLoop = () => {
@@ -54,15 +60,15 @@ const About = () => {
       // ENTRANCE ANIMATIONS (triggered by revealAbout)
       // ═══════════════════════════════════════════════
 
-      // Phase 1: Label
+      // Label
       tl.fromTo(
         sectionLabel,
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" },
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.7, ease: "power3.out" },
         0,
       );
 
-      // Phase 1: Statement lines — clip reveal
+      // Statement lines — clip reveal
       lines.forEach((line, i) => {
         tl.fromTo(
           line,
@@ -82,7 +88,7 @@ const About = () => {
         );
       });
 
-      // Phase 1: Accent word glow
+      // Accent word glow
       if (accentWord) {
         tl.to(
           accentWord,
@@ -101,14 +107,14 @@ const About = () => {
       // SCROLL-DRIVEN ANIMATIONS
       // ═══════════════════════════════════════════════
 
-      // Zone A — Parallax on scroll
-      const zoneA = containerRef.current!.querySelector(".zone-a");
-      if (zoneA) {
-        gsap.to(".zone-a-text", {
+      // Statement parallax on scroll
+      const heroZone = containerRef.current!.querySelector(".about-hero");
+      if (heroZone) {
+        gsap.to(".about-statement", {
           y: -80,
           ease: "none",
           scrollTrigger: {
-            trigger: zoneA,
+            trigger: heroZone,
             start: "top top",
             end: "bottom top",
             scrub: 1,
@@ -116,68 +122,65 @@ const About = () => {
         });
       }
 
-      // Zone B — Stats entrance
-      const statBlocks = gsap.utils.toArray<HTMLElement>(".stat-block");
-      statBlocks.forEach((block, i) => {
+      // Divider line draws in
+      gsap.fromTo(
+        ".about-divider",
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          duration: 1.5,
+          ease: "power3.inOut",
+          scrollTrigger: {
+            trigger: ".about-lower",
+            start: "top 80%",
+            toggleActions: "play none none none",
+          },
+        },
+      );
+
+      // Stat rows stagger in
+      const statRows = gsap.utils.toArray<HTMLElement>(".about-stat-row");
+      statRows.forEach((row, i) => {
         gsap.fromTo(
-          block,
-          { opacity: 0, y: 30 },
+          row,
+          { opacity: 0, y: 25 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.7,
+            duration: 0.8,
             ease: "power3.out",
-            delay: i * 0.12,
+            delay: i * 0.1,
             scrollTrigger: {
-              trigger: ".zone-b",
-              start: "top 80%",
+              trigger: ".about-lower",
+              start: "top 75%",
               toggleActions: "play none none none",
             },
           },
         );
       });
 
-      // Zone B — Stat dividers draw in
-      const dividers = gsap.utils.toArray<HTMLElement>(".stat-divider");
-      dividers.forEach((div) => {
+      // Stat rule lines draw in
+      const ruleLines = gsap.utils.toArray<HTMLElement>(".stat-rule");
+      ruleLines.forEach((rule, i) => {
         gsap.fromTo(
-          div,
-          { scaleY: 0 },
+          rule,
+          { scaleX: 0 },
           {
-            scaleY: 1,
-            duration: 0.8,
+            scaleX: 1,
+            duration: 1,
+            delay: 0.2 + i * 0.08,
             ease: "power3.inOut",
             scrollTrigger: {
-              trigger: ".zone-b",
-              start: "top 80%",
+              trigger: ".about-lower",
+              start: "top 75%",
               toggleActions: "play none none none",
             },
           },
         );
       });
 
-      // Zone B — Philosophy line fade in
-      const philosophy = containerRef.current!.querySelector(".zone-b-philosophy");
-      if (philosophy) {
-        gsap.fromTo(
-          philosophy,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: philosophy,
-              start: "top 85%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-      }
-
-      // Zone B — Inline stat count-ups
-      const inlineStats = gsap.utils.toArray<HTMLElement>(".inline-stat");
+      // Stat count-ups
+      const inlineStats = gsap.utils.toArray<HTMLElement>(".stat-value");
       inlineStats.forEach((el) => {
         const target = Number(el.dataset.value);
         const suffix = el.dataset.suffix || "";
@@ -198,6 +201,23 @@ const About = () => {
         });
       });
 
+      // Philosophy tagline
+      gsap.fromTo(
+        ".about-tagline",
+        { y: 20, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".about-tagline",
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        },
+      );
+
     }, containerRef);
 
     return () => {
@@ -210,55 +230,64 @@ const About = () => {
 
   return (
     <section ref={containerRef} id="about" className="about-section" style={{ visibility: "hidden" }}>
-      {/* Section label */}
-      <div className="about-label">
-        <span className="label-index">01</span>
-        <span className="label-dash">&mdash;</span>
-        <span className="label-text">ABOUT</span>
-      </div>
-
-      {/* ═══ ZONE A — The Hook ═══ */}
-      <div className="zone-a">
-        <div className="zone-a-text">
-          <h2 className="statement">
-            <span className="statement-line">I don&rsquo;t just write code.</span>
-            <span className="statement-line">
-              I build the{" "}
-              <em className="accent-word">systems</em>
-            </span>
-            <span className="statement-line">that make everything else possible.</span>
-          </h2>
-        </div>
-
-      </div>
-
-      {/* ═══ ZONE B — Stats & Philosophy ═══ */}
-      <div className="zone-b">
-        <div className="zone-b-stats">
-          <div className="stat-block">
-            <span className="stat-number inline-stat interactive" data-value="8" data-suffix="+">0</span>
-            <span className="stat-label">Years</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-block">
-            <span className="stat-number inline-stat interactive" data-value="50" data-suffix="+">0</span>
-            <span className="stat-label">Projects</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-block">
-            <span className="stat-number inline-stat interactive" data-value="12" data-suffix="">0</span>
-            <span className="stat-label">Industries</span>
+      <div className="about-container">
+        {/* Header — matches Industries/Contact label pattern */}
+        <div className="about-header">
+          <div className="about-label">
+            <span className="label-index">01</span>
+            <span className="label-line" />
+            <span className="label-text">About</span>
           </div>
         </div>
 
-        <p className="zone-b-philosophy body-paragraph">
-          I think in systems. Not frameworks &mdash; systems.
-        </p>
-      </div>
+        {/* Statement — full viewport with mouse parallax */}
+        <div className="about-hero">
+          <div className="about-statement">
+            <h2 className="statement">
+              <span className="statement-line">I don&rsquo;t just write code.</span>
+              <span className="statement-line">
+                I build the{" "}
+                <em className="accent-word">systems</em>
+              </span>
+              <span className="statement-line">that make everything else possible.</span>
+            </h2>
+          </div>
+        </div>
 
+        {/* Lower section — stats + tagline */}
+        <div className="about-lower">
+          <div className="about-divider" />
+
+          {/* Stat rows — editorial layout matching Industries rows */}
+          <div className="about-stats">
+            <div className="stat-rule" />
+            {STATS.map((stat, i) => (
+              <React.Fragment key={i}>
+                <div className="about-stat-row">
+                  <span className="stat-number">{String(i + 1).padStart(2, "0")}</span>
+                  <span
+                    className="stat-value interactive"
+                    data-value={stat.value}
+                    data-suffix={stat.suffix}
+                  >
+                    0
+                  </span>
+                  <span className="stat-label">{stat.label}</span>
+                </div>
+                <div className="stat-rule" />
+              </React.Fragment>
+            ))}
+          </div>
+
+          <p className="about-tagline">
+            I think in systems. Not frameworks &mdash;{" "}
+            <em className="tagline-accent">systems.</em>
+          </p>
+        </div>
+      </div>
 
       <style jsx>{`
-        /* ── Section container ─────────────────────── */
+        /* ── Section ─────────────────────────────── */
         .about-section {
           position: relative;
           z-index: 2;
@@ -266,50 +295,54 @@ const About = () => {
           overflow: hidden;
         }
 
-        /* ── Label ────────────────────────────────── */
+        .about-container {
+          max-width: 1300px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 8rem 4rem;
+        }
+
+        /* ── Label — matches Industries/Contact ── */
+        .about-header {
+          margin-bottom: 2.5rem;
+        }
+
         .about-label {
-          position: absolute;
-          top: 3rem;
-          left: 4rem;
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          z-index: 10;
+          gap: 1.5rem;
           opacity: 0;
         }
 
         .label-index {
           font-family: var(--font-mono);
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: #fff;
           letter-spacing: 0.1em;
         }
 
-        .label-dash {
-          font-family: var(--font-mono);
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.3);
+        .label-line {
+          width: 40px;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.3);
         }
 
         .label-text {
           font-family: var(--font-mono);
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           letter-spacing: 0.2em;
+          text-transform: uppercase;
           color: rgba(255, 255, 255, 0.5);
         }
 
-        /* ═══ ZONE A ══════════════════════════════ */
-        .zone-a {
-          min-height: 100vh;
+        /* ── Hero zone — statement ───────────────── */
+        .about-hero {
+          min-height: 80vh;
           display: flex;
           align-items: center;
-          padding: 8rem 4rem 6rem;
-          position: relative;
-          max-width: 1200px;
-          margin: 0 auto;
         }
 
-        .zone-a-text {
+        .about-statement {
           position: relative;
           z-index: 2;
           will-change: transform;
@@ -322,7 +355,6 @@ const About = () => {
           line-height: 1.2;
           color: #fff;
           margin: 0;
-          text-align: left;
         }
 
         .statement-line {
@@ -333,45 +365,61 @@ const About = () => {
 
         .accent-word {
           font-style: italic;
-          color: rgba(255, 255, 255, 0.5);
+          color: rgba(255, 255, 255, 0.4);
         }
 
-        /* ═══ ZONE B ══════════════════════════════ */
-        .zone-b {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 0 4rem 10rem;
-          max-width: 1200px;
-          margin: 0 auto;
+        /* ── Lower section ───────────────────────── */
+        .about-lower {
+          padding-top: 2rem;
         }
 
-        .zone-b-stats {
-          display: flex;
-          align-items: center;
-          gap: 4rem;
+        .about-divider {
+          width: 100px;
+          height: 1px;
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.4),
+            transparent
+          );
+          margin-bottom: 4rem;
+          transform-origin: left center;
+        }
+
+        /* ── Stats — editorial rows like Industries ─ */
+        .about-stats {
           margin-bottom: 4rem;
         }
 
-        .stat-block {
+        .about-stat-row {
           display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.75rem;
+          align-items: baseline;
+          gap: 2.5rem;
+          padding: 2rem 0;
+          opacity: 0;
         }
 
         .stat-number {
-          font-family: 'Space Grotesk', var(--font-display);
-          font-size: clamp(3rem, 6vw, 5rem);
-          font-weight: 700;
-          color: #fff;
-          line-height: 1;
-          cursor: default;
-          transition: text-shadow 0.3s ease;
+          font-family: var(--font-mono);
+          font-size: 0.7rem;
+          letter-spacing: 0.15em;
+          color: rgba(255, 255, 255, 0.2);
+          min-width: 2.5rem;
         }
 
-        .stat-number:hover {
-          text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        .stat-value {
+          font-family: 'Cormorant Garamond', var(--font-serif);
+          font-size: clamp(2.5rem, 5vw, 4.5rem);
+          font-weight: 300;
+          color: #fff;
+          line-height: 1;
+          min-width: 5rem;
+          cursor: default;
+          transition: text-shadow 0.4s ease;
+        }
+
+        .stat-value:hover {
+          text-shadow: 0 0 60px rgba(255, 255, 255, 0.15),
+                       0 0 120px rgba(255, 255, 255, 0.05);
         }
 
         .stat-label {
@@ -382,76 +430,56 @@ const About = () => {
           color: rgba(255, 255, 255, 0.3);
         }
 
-        .stat-divider {
-          width: 1px;
-          height: 4rem;
-          background: rgba(255, 255, 255, 0.1);
+        .stat-rule {
+          height: 1px;
+          background: rgba(255, 255, 255, 0.06);
+          transform-origin: left center;
         }
 
-        .inline-stat {
-          font-family: 'Space Grotesk', var(--font-display);
-          font-size: inherit;
-          font-weight: inherit;
-          color: inherit;
-          line-height: inherit;
-        }
-
-        .zone-b-philosophy {
+        /* ── Tagline — matches Contact tagline ───── */
+        .about-tagline {
           font-family: 'Cormorant Garamond', var(--font-serif);
-          font-size: clamp(1.1rem, 1.8vw, 1.4rem);
-          font-weight: 400;
+          font-size: clamp(1rem, 1.5vw, 1.2rem);
           font-style: italic;
           color: rgba(255, 255, 255, 0.4);
-          line-height: 1.6;
           margin: 0;
-          text-align: center;
           opacity: 0;
         }
 
-        .body-paragraph {
-          opacity: 0;
+        .tagline-accent {
+          color: rgba(255, 255, 255, 0.6);
         }
 
         /* ── Responsive ──────────────────────────── */
         @media (max-width: 1024px) {
-          .zone-a {
-            padding: 6rem 2.5rem 4rem;
-          }
-
-          .zone-b {
-            padding: 0 2.5rem 8rem;
-          }
-
-          .about-label {
-            left: 2.5rem;
+          .about-container {
+            padding: 7rem 2.5rem;
           }
         }
 
         @media (max-width: 768px) {
-          .about-label {
-            top: 2rem;
-            left: 1.5rem;
+          .about-container {
+            padding: 5rem 1.5rem;
           }
 
-          .zone-a {
-            padding: 6rem 1.5rem 4rem;
-            min-height: auto;
+          .about-header {
+            margin-bottom: 1.5rem;
+          }
+
+          .about-hero {
+            min-height: 60vh;
           }
 
           .statement {
             font-size: clamp(2rem, 8vw, 2.8rem);
           }
 
-          .zone-b {
-            padding: 0 1.5rem 6rem;
+          .about-stat-row {
+            gap: 1.5rem;
           }
 
-          .zone-b-stats {
-            gap: 2rem;
-          }
-
-          .stat-divider {
-            height: 3rem;
+          .stat-value {
+            min-width: 3.5rem;
           }
         }
       `}</style>
