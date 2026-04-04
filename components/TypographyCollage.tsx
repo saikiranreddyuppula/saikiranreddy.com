@@ -357,7 +357,7 @@ const TypographyCollage: React.FC = () => {
         }}>Docker · Kubernetes · GitHub Actions · Terraform</div>
       </Paper>
 
-      {/* ═══ AI/ML z=5 ─ Machine Learning / AI ═══ */}
+      {/* ═══ Generative AI z=5 ─ Machine Learning / Generative AI ═══ */}
       <Paper id="times" bg="#999"
         pos={{ top: "38%", left: "8%", width: "56%", height: "36%" }}
         z={5} rotate={0.5} selected={selected} onSelect={handleSelect}>
@@ -374,7 +374,7 @@ const TypographyCollage: React.FC = () => {
           fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
           fontSize: "clamp(55px, 8.5vw, 140px)", fontWeight: 700,
           color: "#222", letterSpacing: "-1px", lineHeight: 0.9,
-        }}>AI/ML</div>
+        }}>Generative AI</div>
         {/* Thin rule */}
         <div style={{
           position: "absolute", top: "56%", left: "4%", width: "50%",

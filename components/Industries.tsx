@@ -30,9 +30,9 @@ const industries = [
         tags: ["Booking Engines", "Guest Experience", "PMS"],
     },
     {
-        name: "Artificial Intelligence",
+        name: "Generative AI",
         number: "05",
-        description: "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
+        description: "ML pipelines, intelligent automation systems, and Generative AI-driven products from prototype to production at scale.",
         tags: ["ML Pipelines", "NLP", "Computer Vision"],
     },
     {
