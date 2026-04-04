@@ -249,11 +249,12 @@ const Hero = () => {
           {heroChars}
         </p>
 
-        {/* Minimal scroll indicator: thin animated line */}
+        {/* Minimal scroll indicator: thin animated line + keep scrolling */}
         <div className="hero-scroll-line-wrap interactive">
           <div className="hero-scroll-line-track">
             <div className="hero-scroll-line-pulse" />
           </div>
+          <span className="hero-scroll-label">keep scrolling</span>
         </div>
       </div>
 
@@ -300,10 +301,26 @@ const Hero = () => {
         /* Scroll indicator: minimal pulsing line */
         .hero-scroll-line-wrap {
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
           margin-top: 1.5rem;
           opacity: 0;
           margin-bottom: 1.5rem;
+          gap: 0.75rem;
+        }
+
+        .hero-scroll-label {
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.35);
+          animation: labelFade 2.8s ease-in-out infinite;
+        }
+
+        @keyframes labelFade {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.7; }
         }
 
         .hero-scroll-line-track {
