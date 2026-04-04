@@ -190,7 +190,7 @@ const ChicagoSkyline: React.FC = () => {
         el,
         { opacity: 0 },
         {
-          opacity: () => 0.3 + Math.random() * 0.7,
+          opacity: () => 0.2 + Math.random() * 0.4,
           duration: data.duration,
           delay: data.delay,
           repeat: -1,
@@ -216,39 +216,32 @@ const ChicagoSkyline: React.FC = () => {
       >
         <defs>
           <linearGradient id="metal-v" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="6%" stopColor="#d0d0d0" />
-            <stop offset="14%" stopColor="#f2f2f2" />
-            <stop offset="22%" stopColor="#a8a8a8" />
-            <stop offset="32%" stopColor="#e0e0e0" />
-            <stop offset="42%" stopColor="#888888" />
-            <stop offset="52%" stopColor="#c4c4c4" />
-            <stop offset="62%" stopColor="#606060" />
-            <stop offset="72%" stopColor="#9a9a9a" />
-            <stop offset="82%" stopColor="#404040" />
-            <stop offset="92%" stopColor="#606060" />
-            <stop offset="100%" stopColor="#1a1a1a" />
+            <stop offset="0%" stopColor="#808080" />
+            <stop offset="10%" stopColor="#606060" />
+            <stop offset="25%" stopColor="#4a4a4a" />
+            <stop offset="40%" stopColor="#383838" />
+            <stop offset="55%" stopColor="#2a2a2a" />
+            <stop offset="70%" stopColor="#1e1e1e" />
+            <stop offset="85%" stopColor="#141414" />
+            <stop offset="100%" stopColor="#0a0a0a" />
           </linearGradient>
 
           <linearGradient id="metal-h" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="8%" stopColor="rgba(255,255,255,0.18)" />
-            <stop offset="18%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="30%" stopColor="rgba(255,255,255,0.22)" />
-            <stop offset="42%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="55%" stopColor="rgba(255,255,255,0.26)" />
-            <stop offset="67%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="78%" stopColor="rgba(255,255,255,0.20)" />
-            <stop offset="90%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
+            <stop offset="15%" stopColor="rgba(255,255,255,0.06)" />
+            <stop offset="30%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.08)" />
+            <stop offset="70%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="85%" stopColor="rgba(255,255,255,0.05)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.00)" />
           </linearGradient>
 
           <linearGradient id="metal-glint" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="30%" stopColor="rgba(255,255,255,0.00)" />
-            <stop offset="45%" stopColor="rgba(255,255,255,0.30)" />
-            <stop offset="55%" stopColor="rgba(255,255,255,0.08)" />
-            <stop offset="70%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="40%" stopColor="rgba(255,255,255,0.00)" />
+            <stop offset="48%" stopColor="rgba(255,255,255,0.10)" />
+            <stop offset="52%" stopColor="rgba(255,255,255,0.03)" />
+            <stop offset="60%" stopColor="rgba(255,255,255,0.00)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0.00)" />
           </linearGradient>
 
@@ -308,8 +301,7 @@ const ChicagoSkyline: React.FC = () => {
           display: block;
           width: 100%;
           height: auto;
-          opacity: 0.35;
-          filter: contrast(1.1) brightness(1.05);
+          opacity: 0.6;
           will-change: transform;
         }
 
@@ -321,17 +313,17 @@ const ChicagoSkyline: React.FC = () => {
 
         .window-light {
           position: absolute;
-          width: 3px;
-          height: 2px;
-          background: #ffeebb;
+          width: 2px;
+          height: 1.5px;
+          background: rgba(255, 255, 255, 0.9);
           border-radius: 0.5px;
-          box-shadow: 0 0 4px 1px rgba(255, 238, 187, 0.5);
+          box-shadow: 0 0 3px 1px rgba(255, 255, 255, 0.3);
           opacity: 0;
         }
 
         @media (max-width: 768px) {
           .chicago-skyline-svg {
-            opacity: 0.22;
+            opacity: 0.4;
           }
         }
       `}</style>

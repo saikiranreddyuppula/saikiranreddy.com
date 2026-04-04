@@ -445,8 +445,8 @@ const Contact = () => {
           height: 400px;
           background: radial-gradient(
             ellipse at center,
-            rgba(255, 250, 240, 0.07) 0%,
-            rgba(255, 255, 255, 0.02) 40%,
+            rgba(255, 255, 255, 0.04) 0%,
+            rgba(255, 255, 255, 0.01) 40%,
             transparent 70%
           );
           pointer-events: none;
