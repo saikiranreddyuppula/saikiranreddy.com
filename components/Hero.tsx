@@ -88,12 +88,12 @@ const Hero = () => {
       0,
     );
 
-    // Scroll indicator fade in (after text lands)
+    // Scroll prompt fade in (after text lands)
     introTl.fromTo(
-      ".hero-scroll-line-wrap",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.5, ease: "power2.out" },
-      0.5,
+      ".hero-scroll-prompt",
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
+      0.6,
     );
 
     introTl.fromTo(
@@ -249,12 +249,12 @@ const Hero = () => {
           {heroChars}
         </p>
 
-        {/* Minimal scroll indicator: thin animated line + keep scrolling */}
-        <div className="hero-scroll-line-wrap interactive">
+        {/* Scroll prompt — serif italic to match tagline */}
+        <div className="hero-scroll-prompt interactive">
+          <span className="hero-scroll-label">keep scrolling</span>
           <div className="hero-scroll-line-track">
             <div className="hero-scroll-line-pulse" />
           </div>
-          <span className="hero-scroll-label">keep scrolling</span>
         </div>
       </div>
 
@@ -298,57 +298,51 @@ const Hero = () => {
           perspective: 600px;
         }
 
-        /* Scroll indicator: minimal pulsing line */
-        .hero-scroll-line-wrap {
+        /* Scroll prompt */
+        .hero-scroll-prompt {
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin-top: 1.5rem;
+          margin-top: 2rem;
           opacity: 0;
-          margin-bottom: 1.5rem;
-          gap: 0.75rem;
+          gap: 1rem;
         }
 
         .hero-scroll-label {
-          font-family: var(--font-mono);
-          font-size: 0.85rem;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.4);
-          animation: labelFade 2.8s ease-in-out infinite;
-        }
-
-        @keyframes labelFade {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.7; }
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(0.85rem, 1.4vw, 1rem);
+          font-weight: 300;
+          font-style: italic;
+          letter-spacing: 0.12em;
+          color: rgba(255, 255, 255, 0.3);
         }
 
         .hero-scroll-line-track {
           width: 1px;
-          height: 48px;
-          background: rgba(255, 255, 255, 0.08);
+          height: 40px;
+          background: rgba(255, 255, 255, 0.06);
           position: relative;
           overflow: hidden;
         }
 
         .hero-scroll-line-pulse {
           position: absolute;
-          top: -20px;
+          top: -16px;
           left: 0;
           width: 100%;
-          height: 20px;
+          height: 16px;
           background: linear-gradient(
             to bottom,
             rgba(255, 255, 255, 0),
-            rgba(255, 255, 255, 0.6),
+            rgba(255, 255, 255, 0.4),
             rgba(255, 255, 255, 0)
           );
-          animation: linePulse 1.4s ease-in-out infinite;
+          animation: linePulse 2s ease-in-out infinite;
         }
 
         @keyframes linePulse {
           0% {
-            top: -20px;
+            top: -16px;
             opacity: 0;
           }
           20% {
@@ -358,7 +352,7 @@ const Hero = () => {
             opacity: 1;
           }
           100% {
-            top: 48px;
+            top: 40px;
             opacity: 0;
           }
         }
