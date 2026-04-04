@@ -10,48 +10,36 @@ const industries = [
         number: "01",
         description: "Scalable platforms that handle millions of transactions with real-time inventory, dynamic pricing, and seamless checkout experiences.",
         tags: ["Payments", "Inventory", "Microservices"],
-        gradient: "245, 158, 11",
-        icon: "&#9670;",
     },
     {
         name: "Cyber Security",
         number: "02",
         description: "Zero-trust architectures and threat detection systems that protect critical infrastructure at scale.",
         tags: ["Zero Trust", "Threat Detection", "Compliance"],
-        gradient: "6, 182, 212",
-        icon: "&#9671;",
     },
     {
         name: "Healthcare",
         number: "03",
         description: "HIPAA-compliant systems for patient data management, telemedicine platforms, and clinical workflow automation.",
         tags: ["HIPAA", "EHR Systems", "Telemedicine"],
-        gradient: "16, 185, 129",
-        icon: "&#9672;",
     },
     {
         name: "Hospitality",
         number: "04",
         description: "Real-time booking engines, guest experience platforms, and operational systems that delight at every touchpoint.",
         tags: ["Booking Engines", "Guest Experience", "PMS"],
-        gradient: "244, 63, 94",
-        icon: "&#9673;",
     },
     {
         name: "Generative AI",
         number: "05",
         description: "ML pipelines, intelligent automation systems, and Generative AI-driven products from prototype to production at scale.",
         tags: ["ML Pipelines", "NLP", "Computer Vision"],
-        gradient: "139, 92, 246",
-        icon: "&#9674;",
     },
     {
         name: "Manufacturing",
         number: "06",
         description: "IoT integration, supply chain optimization, and predictive maintenance systems for smart factories.",
         tags: ["IoT", "Supply Chain", "Predictive Maintenance"],
-        gradient: "249, 115, 22",
-        icon: "&#9675;",
     }
 ];
 
@@ -76,8 +64,8 @@ const IndustryCard = ({ industry, index }: CardProps) => {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => {
             setTilt({
-                x: (y - 0.5) * -8,
-                y: (x - 0.5) * 8,
+                x: (y - 0.5) * -6,
+                y: (x - 0.5) * 6,
             });
             setMousePos({ x: x * 100, y: y * 100 });
         });
@@ -93,13 +81,8 @@ const IndustryCard = ({ industry, index }: CardProps) => {
         return () => cancelAnimationFrame(rafRef.current);
     }, []);
 
-    const isLarge = index === 0 || index === 3 || index === 4;
-
     return (
-        <div
-            className={`ind-card-wrapper ${isLarge ? 'ind-card-large' : 'ind-card-small'}`}
-            style={{ '--stagger': index } as React.CSSProperties}
-        >
+        <div className="ind-card-wrapper">
             <div
                 ref={cardRef}
                 className={`ind-card interactive ${isHovered ? 'is-hovered' : ''}`}
@@ -111,7 +94,6 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     '--tilt-y': `${tilt.y}deg`,
                     '--mouse-x': `${mousePos.x}%`,
                     '--mouse-y': `${mousePos.y}%`,
-                    '--card-rgb': industry.gradient,
                 } as React.CSSProperties}
             >
                 {/* Ambient glow behind card */}
@@ -119,17 +101,21 @@ const IndustryCard = ({ industry, index }: CardProps) => {
 
                 {/* Glass surface */}
                 <div className="ind-card-surface">
-                    {/* Spotlight that follows cursor */}
+                    {/* White spotlight follows cursor */}
                     <div className="ind-card-spotlight" />
 
-                    {/* Border gradient overlay */}
+                    {/* Border */}
                     <div className="ind-card-border" />
 
                     {/* Content */}
                     <div className="ind-card-content">
                         <div className="ind-card-top">
                             <span className="ind-card-number">{industry.number}</span>
-                            <span className="ind-card-dot" dangerouslySetInnerHTML={{ __html: industry.icon }} />
+                            <div className="ind-card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17" />
+                                </svg>
+                            </div>
                         </div>
 
                         {/* Large background number watermark */}
@@ -146,11 +132,6 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                                     <span key={i} className="ind-card-tag">{tag}</span>
                                 ))}
                             </div>
-                            <div className="ind-card-arrow">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M7 17L17 7M17 7H7M17 7V17" />
-                                </svg>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -159,10 +140,6 @@ const IndustryCard = ({ industry, index }: CardProps) => {
             <style jsx>{`
                 .ind-card-wrapper {
                     grid-column: span 1;
-                }
-
-                .ind-card-large {
-                    grid-row: span 1;
                 }
 
                 .ind-card {
@@ -174,17 +151,17 @@ const IndustryCard = ({ industry, index }: CardProps) => {
 
                 .ind-card-glow {
                     position: absolute;
-                    inset: -1px;
+                    inset: -2px;
                     border-radius: 16px;
                     background: radial-gradient(
-                        600px circle at var(--mouse-x) var(--mouse-y),
-                        rgba(var(--card-rgb), 0.12),
-                        transparent 60%
+                        500px circle at var(--mouse-x) var(--mouse-y),
+                        rgba(255, 255, 255, 0.06),
+                        transparent 50%
                     );
                     opacity: 0;
-                    transition: opacity 0.5s ease;
+                    transition: opacity 0.6s ease;
                     z-index: 0;
-                    filter: blur(40px);
+                    filter: blur(30px);
                 }
 
                 .is-hovered .ind-card-glow {
@@ -195,28 +172,25 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     position: relative;
                     height: 100%;
                     border-radius: 16px;
-                    background: rgba(255, 255, 255, 0.02);
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
+                    background: rgba(255, 255, 255, 0.015);
                     overflow: hidden;
                     transform-style: preserve-3d;
                     transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-                    transition: transform 0.35s cubic-bezier(0.03, 0.98, 0.52, 0.99),
+                    transition: transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99),
                                 background 0.5s ease;
                     will-change: transform;
                 }
 
                 .is-hovered .ind-card-surface {
-                    background: rgba(255, 255, 255, 0.035);
+                    background: rgba(255, 255, 255, 0.03);
                 }
 
                 .ind-card-spotlight {
                     position: absolute;
                     inset: 0;
-                    border-radius: 16px;
                     background: radial-gradient(
-                        400px circle at var(--mouse-x) var(--mouse-y),
-                        rgba(var(--card-rgb), 0.07),
+                        350px circle at var(--mouse-x) var(--mouse-y),
+                        rgba(255, 255, 255, 0.05),
                         transparent 50%
                     );
                     opacity: 0;
@@ -233,14 +207,14 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     position: absolute;
                     inset: 0;
                     border-radius: 16px;
-                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
                     transition: border-color 0.5s ease;
                     pointer-events: none;
                     z-index: 3;
                 }
 
                 .is-hovered .ind-card-border {
-                    border-color: rgba(var(--card-rgb), 0.25);
+                    border-color: rgba(255, 255, 255, 0.12);
                 }
 
                 .ind-card-content {
@@ -249,7 +223,7 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     display: flex;
                     flex-direction: column;
                     height: 100%;
-                    padding: 2rem 2rem 1.75rem;
+                    padding: 2rem;
                     min-height: 340px;
                 }
 
@@ -264,22 +238,23 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     font-family: var(--font-mono);
                     font-size: 0.7rem;
                     letter-spacing: 0.15em;
-                    color: rgba(var(--card-rgb), 0.6);
+                    color: rgba(255, 255, 255, 0.25);
                     transition: color 0.4s ease;
                 }
 
                 .is-hovered .ind-card-number {
-                    color: rgba(var(--card-rgb), 1);
+                    color: rgba(255, 255, 255, 0.6);
                 }
 
-                .ind-card-dot {
-                    font-size: 0.65rem;
-                    color: rgba(var(--card-rgb), 0.4);
-                    transition: color 0.4s ease;
+                .ind-card-arrow {
+                    color: rgba(255, 255, 255, 0.1);
+                    transform: translate(-4px, 4px);
+                    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99);
                 }
 
-                .is-hovered .ind-card-dot {
-                    color: rgba(var(--card-rgb), 0.8);
+                .is-hovered .ind-card-arrow {
+                    color: rgba(255, 255, 255, 0.5);
+                    transform: translate(0, 0);
                 }
 
                 .ind-card-watermark {
@@ -288,17 +263,18 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     right: 1.5rem;
                     transform: translateY(-50%);
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(6rem, 10vw, 10rem);
+                    font-size: clamp(7rem, 12vw, 11rem);
                     font-weight: 300;
                     line-height: 1;
-                    color: rgba(255, 255, 255, 0.02);
+                    color: rgba(255, 255, 255, 0.015);
                     pointer-events: none;
                     transition: color 0.6s ease;
                     z-index: 0;
+                    user-select: none;
                 }
 
                 .is-hovered .ind-card-watermark {
-                    color: rgba(var(--card-rgb), 0.05);
+                    color: rgba(255, 255, 255, 0.04);
                 }
 
                 .ind-card-body {
@@ -312,9 +288,9 @@ const IndustryCard = ({ industry, index }: CardProps) => {
 
                 .ind-card-name {
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(1.75rem, 3vw, 2.5rem);
+                    font-size: clamp(1.75rem, 2.8vw, 2.4rem);
                     font-weight: 300;
-                    color: rgba(255, 255, 255, 0.7);
+                    color: rgba(255, 255, 255, 0.55);
                     margin: 0 0 1rem;
                     line-height: 1.15;
                     letter-spacing: -0.01em;
@@ -331,25 +307,21 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     font-size: clamp(0.9rem, 1.1vw, 1.05rem);
                     font-style: italic;
                     line-height: 1.7;
-                    color: rgba(255, 255, 255, 0.25);
+                    color: rgba(255, 255, 255, 0.15);
                     margin: 0;
                     max-width: 380px;
                     transform: translateY(8px);
                     opacity: 0;
-                    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.03, 0.98, 0.52, 0.99), color 0.4s ease;
+                    transition: opacity 0.5s ease 0.05s, transform 0.5s cubic-bezier(0.03, 0.98, 0.52, 0.99) 0.05s, color 0.4s ease;
                 }
 
                 .is-hovered .ind-card-desc {
                     opacity: 1;
                     transform: translateY(0);
-                    color: rgba(255, 255, 255, 0.45);
+                    color: rgba(255, 255, 255, 0.4);
                 }
 
                 .ind-card-footer {
-                    display: flex;
-                    align-items: flex-end;
-                    justify-content: space-between;
-                    gap: 1rem;
                     margin-top: 1.5rem;
                     position: relative;
                     z-index: 1;
@@ -366,41 +338,29 @@ const IndustryCard = ({ industry, index }: CardProps) => {
                     font-size: 0.6rem;
                     letter-spacing: 0.1em;
                     text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.2);
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    padding: 0.3rem 0.6rem;
+                    color: rgba(255, 255, 255, 0.15);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    padding: 0.3rem 0.65rem;
                     border-radius: 100px;
                     transition: border-color 0.4s ease, color 0.4s ease;
                     white-space: nowrap;
                 }
 
                 .is-hovered .ind-card-tag {
-                    border-color: rgba(var(--card-rgb), 0.2);
+                    border-color: rgba(255, 255, 255, 0.15);
                     color: rgba(255, 255, 255, 0.4);
-                }
-
-                .ind-card-arrow {
-                    flex-shrink: 0;
-                    color: rgba(255, 255, 255, 0.15);
-                    transform: translate(-4px, 4px);
-                    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99);
-                }
-
-                .is-hovered .ind-card-arrow {
-                    color: rgba(var(--card-rgb), 0.7);
-                    transform: translate(0, 0);
                 }
 
                 @media (max-width: 768px) {
                     .ind-card-content {
                         padding: 1.5rem;
-                        min-height: 280px;
+                        min-height: 260px;
                     }
 
                     .ind-card-desc {
                         opacity: 1;
                         transform: translateY(0);
-                        color: rgba(255, 255, 255, 0.35);
+                        color: rgba(255, 255, 255, 0.3);
                     }
 
                     .ind-card-watermark {
@@ -473,18 +433,18 @@ const Industries = () => {
                 { opacity: 1, y: 0, duration: 0.8, delay: 0.6, ease: 'power3.out' }
             );
 
-            // Cards stagger entrance
+            // Cards stagger entrance with alternating vertical offset
             const cards = gsap.utils.toArray<HTMLElement>('.ind-card-wrapper');
             cards.forEach((card, i) => {
                 gsap.fromTo(
                     card,
-                    { opacity: 0, y: 60, scale: 0.95 },
+                    { opacity: 0, y: 50 + (i % 2) * 20, scale: 0.97 },
                     {
                         opacity: 1,
                         y: 0,
                         scale: 1,
-                        duration: 0.9,
-                        delay: 0.4 + i * 0.1,
+                        duration: 1,
+                        delay: 0.4 + i * 0.08,
                         ease: 'power3.out',
                     }
                 );
@@ -533,11 +493,10 @@ const Industries = () => {
 
     return (
         <section ref={containerRef} id="industries" className="ind-section">
-            {/* Ambient background orbs */}
+            {/* Ambient white light orbs */}
             <div className="ind-ambient" aria-hidden="true">
                 <div className="ind-orb ind-orb-1" />
                 <div className="ind-orb ind-orb-2" />
-                <div className="ind-orb ind-orb-3" />
             </div>
 
             <div className="ind-container">
@@ -590,6 +549,7 @@ const Industries = () => {
                     min-height: 100vh;
                 }
 
+                /* Ambient white light — monochrome only */
                 .ind-ambient {
                     position: absolute;
                     inset: 0;
@@ -602,52 +562,36 @@ const Industries = () => {
                     position: absolute;
                     border-radius: 50%;
                     filter: blur(120px);
-                    opacity: 0.3;
                 }
 
                 .ind-orb-1 {
-                    width: 500px;
-                    height: 500px;
-                    background: radial-gradient(circle, rgba(139, 92, 246, 0.08), transparent 70%);
-                    top: 10%;
+                    width: 600px;
+                    height: 600px;
+                    background: radial-gradient(circle, rgba(255, 255, 255, 0.025), transparent 70%);
+                    top: 5%;
                     left: -10%;
-                    animation: ind-float-1 20s ease-in-out infinite;
+                    animation: ind-float-1 25s ease-in-out infinite;
                 }
 
                 .ind-orb-2 {
-                    width: 400px;
-                    height: 400px;
-                    background: radial-gradient(circle, rgba(6, 182, 212, 0.06), transparent 70%);
-                    top: 50%;
-                    right: -5%;
-                    animation: ind-float-2 25s ease-in-out infinite;
-                }
-
-                .ind-orb-3 {
-                    width: 350px;
-                    height: 350px;
-                    background: radial-gradient(circle, rgba(245, 158, 11, 0.05), transparent 70%);
-                    bottom: 5%;
-                    left: 30%;
-                    animation: ind-float-3 22s ease-in-out infinite;
+                    width: 500px;
+                    height: 500px;
+                    background: radial-gradient(circle, rgba(255, 255, 255, 0.02), transparent 70%);
+                    bottom: 0%;
+                    right: -8%;
+                    animation: ind-float-2 30s ease-in-out infinite;
                 }
 
                 @keyframes ind-float-1 {
                     0%, 100% { transform: translate(0, 0); }
-                    33% { transform: translate(40px, -30px); }
-                    66% { transform: translate(-20px, 20px); }
+                    33% { transform: translate(30px, -20px); }
+                    66% { transform: translate(-15px, 15px); }
                 }
 
                 @keyframes ind-float-2 {
                     0%, 100% { transform: translate(0, 0); }
-                    33% { transform: translate(-30px, 40px); }
-                    66% { transform: translate(25px, -15px); }
-                }
-
-                @keyframes ind-float-3 {
-                    0%, 100% { transform: translate(0, 0); }
-                    33% { transform: translate(25px, 25px); }
-                    66% { transform: translate(-35px, -20px); }
+                    33% { transform: translate(-25px, 30px); }
+                    66% { transform: translate(20px, -10px); }
                 }
 
                 .ind-container {
@@ -721,7 +665,7 @@ const Industries = () => {
                 }
 
                 .ind-accent {
-                    color: rgba(255, 255, 255, 0.4);
+                    color: rgba(255, 255, 255, 0.35);
                     font-style: italic;
                 }
 
@@ -730,7 +674,7 @@ const Industries = () => {
                     font-size: clamp(1rem, 1.3vw, 1.15rem);
                     font-style: italic;
                     line-height: 1.6;
-                    color: rgba(255, 255, 255, 0.35);
+                    color: rgba(255, 255, 255, 0.3);
                     margin: 0;
                     max-width: 550px;
                     opacity: 0;
@@ -751,7 +695,7 @@ const Industries = () => {
 
                 .ind-bottom-line {
                     height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
                     transform-origin: left center;
                     transform: scaleX(0);
                     margin-bottom: 1.5rem;
@@ -769,14 +713,14 @@ const Industries = () => {
                     font-size: 0.65rem;
                     letter-spacing: 0.15em;
                     text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.25);
+                    color: rgba(255, 255, 255, 0.2);
                 }
 
                 .ind-counter-value {
                     font-family: var(--font-mono);
                     font-size: 0.8rem;
                     letter-spacing: 0.1em;
-                    color: rgba(255, 255, 255, 0.4);
+                    color: rgba(255, 255, 255, 0.35);
                 }
 
                 @media (max-width: 1024px) {
