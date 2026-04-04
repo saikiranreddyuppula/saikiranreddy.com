@@ -32,7 +32,7 @@ const industries = [
     {
         name: "Generative AI",
         number: "05",
-        description: "ML pipelines, intelligent automation systems, and Generative AI-driven products from prototype to production at scale.",
+        description: "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
         tags: ["ML Pipelines", "NLP", "Computer Vision"],
     },
     {
@@ -43,328 +43,312 @@ const industries = [
     }
 ];
 
-interface CardProps {
+interface RowProps {
     industry: typeof industries[0];
     index: number;
+    isActive: boolean;
+    onEnter: () => void;
+    onLeave: () => void;
 }
 
-const IndustryCard = ({ industry, index }: CardProps) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [tilt, setTilt] = useState({ x: 0, y: 0 });
-    const [isHovered, setIsHovered] = useState(false);
-    const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
-    const rafRef = useRef<number>(0);
-
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = requestAnimationFrame(() => {
-            setTilt({
-                x: (y - 0.5) * -6,
-                y: (x - 0.5) * 6,
-            });
-            setMousePos({ x: x * 100, y: y * 100 });
-        });
-    }, []);
-
-    const handleMouseEnter = useCallback(() => setIsHovered(true), []);
-    const handleMouseLeave = useCallback(() => {
-        setIsHovered(false);
-        setTilt({ x: 0, y: 0 });
-    }, []);
+const IndustryRow = ({ industry, index, isActive, onEnter, onLeave }: RowProps) => {
+    const rowRef = useRef<HTMLDivElement>(null);
+    const descRef = useRef<HTMLDivElement>(null);
+    const tagsRef = useRef<HTMLDivElement>(null);
+    const scanRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        return () => cancelAnimationFrame(rafRef.current);
-    }, []);
+        const desc = descRef.current;
+        const tags = tagsRef.current;
+        const scan = scanRef.current;
+        if (!desc || !tags || !scan) return;
+
+        if (isActive) {
+            // Scan line sweeps across
+            gsap.fromTo(scan,
+                { left: '0%', opacity: 1 },
+                { left: '100%', opacity: 0, duration: 0.8, ease: 'power2.inOut' }
+            );
+            // Description wipes in via clip-path
+            gsap.to(desc, {
+                clipPath: 'inset(0% 0% 0% 0%)',
+                opacity: 1,
+                duration: 0.6,
+                delay: 0.15,
+                ease: 'power3.out',
+            });
+            // Tags stagger in
+            gsap.to(tags, {
+                clipPath: 'inset(0% 0% 0% 0%)',
+                opacity: 1,
+                duration: 0.5,
+                delay: 0.3,
+                ease: 'power3.out',
+            });
+        } else {
+            gsap.to(desc, {
+                clipPath: 'inset(0% 100% 0% 0%)',
+                opacity: 0,
+                duration: 0.35,
+                ease: 'power2.inOut',
+            });
+            gsap.to(tags, {
+                clipPath: 'inset(0% 100% 0% 0%)',
+                opacity: 0,
+                duration: 0.3,
+                ease: 'power2.inOut',
+            });
+            gsap.set(scan, { opacity: 0 });
+        }
+    }, [isActive]);
 
     return (
-        <div className="ind-card-wrapper">
-            <div
-                ref={cardRef}
-                className={`ind-card interactive ${isHovered ? 'is-hovered' : ''}`}
-                onMouseMove={handleMouseMove}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                style={{
-                    '--tilt-x': `${tilt.x}deg`,
-                    '--tilt-y': `${tilt.y}deg`,
-                    '--mouse-x': `${mousePos.x}%`,
-                    '--mouse-y': `${mousePos.y}%`,
-                } as React.CSSProperties}
-            >
-                {/* Ambient glow behind card */}
-                <div className="ind-card-glow" />
+        <div
+            ref={rowRef}
+            className={`ind-row interactive ${isActive ? 'is-active' : ''}`}
+            onMouseEnter={onEnter}
+            onMouseLeave={onLeave}
+            data-index={index}
+        >
+            {/* Horizontal scan line — sweeps on hover */}
+            <div ref={scanRef} className="ind-row-scan" />
 
-                {/* Glass surface */}
-                <div className="ind-card-surface">
-                    {/* White spotlight follows cursor */}
-                    <div className="ind-card-spotlight" />
+            {/* Ghost number — massive, behind everything */}
+            <div className="ind-row-ghost" aria-hidden="true">{industry.number}</div>
 
-                    {/* Border */}
-                    <div className="ind-card-border" />
+            {/* Main row content */}
+            <div className="ind-row-content">
+                <div className="ind-row-head">
+                    <span className="ind-row-number">{industry.number}</span>
+                    <h3 className="ind-row-name">
+                        {industry.name.split('').map((char, i) => (
+                            <span key={i} className="ind-char" style={{ transitionDelay: `${i * 0.015}s` }}>
+                                {char === ' ' ? '\u00A0' : char}
+                            </span>
+                        ))}
+                    </h3>
+                    <div className="ind-row-arrow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                            <path d="M7 17L17 7M17 7H9M17 7V15" />
+                        </svg>
+                    </div>
+                </div>
 
-                    {/* Content */}
-                    <div className="ind-card-content">
-                        <div className="ind-card-top">
-                            <span className="ind-card-number">{industry.number}</span>
-                            <div className="ind-card-arrow">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                    <path d="M7 17L17 7M17 7H7M17 7V17" />
-                                </svg>
-                            </div>
-                        </div>
+                {/* Description — clip-path reveal */}
+                <div ref={descRef} className="ind-row-desc-wrap">
+                    <p className="ind-row-desc">{industry.description}</p>
+                </div>
 
-                        {/* Large background number watermark */}
-                        <div className="ind-card-watermark" aria-hidden="true">{industry.number}</div>
-
-                        <div className="ind-card-body">
-                            <h3 className="ind-card-name">{industry.name}</h3>
-                            <p className="ind-card-desc">{industry.description}</p>
-                        </div>
-
-                        <div className="ind-card-footer">
-                            <div className="ind-card-tags">
-                                {industry.tags.map((tag, i) => (
-                                    <span key={i} className="ind-card-tag">{tag}</span>
-                                ))}
-                            </div>
-                        </div>
+                {/* Tags — clip-path reveal */}
+                <div ref={tagsRef} className="ind-row-tags-wrap">
+                    <div className="ind-row-tags">
+                        {industry.tags.map((tag, i) => (
+                            <span key={i} className="ind-row-tag">{tag}</span>
+                        ))}
                     </div>
                 </div>
             </div>
 
+            {/* Bottom rule line */}
+            <div className="ind-row-rule" />
+
             <style jsx>{`
-                .ind-card-wrapper {
-                    grid-column: span 1;
-                }
-
-                .ind-card {
+                .ind-row {
                     position: relative;
-                    height: 100%;
-                    perspective: 800px;
                     cursor: pointer;
-                }
-
-                .ind-card-glow {
-                    position: absolute;
-                    inset: -2px;
-                    border-radius: 16px;
-                    background: radial-gradient(
-                        500px circle at var(--mouse-x) var(--mouse-y),
-                        rgba(255, 255, 255, 0.06),
-                        transparent 50%
-                    );
-                    opacity: 0;
-                    transition: opacity 0.6s ease;
-                    z-index: 0;
-                    filter: blur(30px);
-                }
-
-                .is-hovered .ind-card-glow {
-                    opacity: 1;
-                }
-
-                .ind-card-surface {
-                    position: relative;
-                    height: 100%;
-                    border-radius: 16px;
-                    background: rgba(255, 255, 255, 0.015);
                     overflow: hidden;
-                    transform-style: preserve-3d;
-                    transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-                    transition: transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99),
-                                background 0.5s ease;
-                    will-change: transform;
                 }
 
-                .is-hovered .ind-card-surface {
-                    background: rgba(255, 255, 255, 0.03);
-                }
-
-                .ind-card-spotlight {
+                /* Scan line */
+                .ind-row-scan {
                     position: absolute;
-                    inset: 0;
-                    background: radial-gradient(
-                        350px circle at var(--mouse-x) var(--mouse-y),
-                        rgba(255, 255, 255, 0.05),
-                        transparent 50%
+                    top: 0;
+                    width: 2px;
+                    height: 100%;
+                    background: linear-gradient(
+                        180deg,
+                        transparent 0%,
+                        rgba(255, 255, 255, 0.6) 20%,
+                        rgba(255, 255, 255, 0.8) 50%,
+                        rgba(255, 255, 255, 0.6) 80%,
+                        transparent 100%
                     );
                     opacity: 0;
-                    transition: opacity 0.4s ease;
                     pointer-events: none;
-                    z-index: 1;
+                    z-index: 10;
+                    box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.08);
                 }
 
-                .is-hovered .ind-card-spotlight {
-                    opacity: 1;
-                }
-
-                .ind-card-border {
+                /* Ghost number */
+                .ind-row-ghost {
                     position: absolute;
-                    inset: 0;
-                    border-radius: 16px;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    transition: border-color 0.5s ease;
+                    right: -2%;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(8rem, 18vw, 16rem);
+                    font-weight: 300;
+                    line-height: 1;
+                    color: rgba(255, 255, 255, 0.0);
                     pointer-events: none;
-                    z-index: 3;
+                    user-select: none;
+                    z-index: 0;
+                    transition: color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+                    letter-spacing: -0.05em;
                 }
 
-                .is-hovered .ind-card-border {
-                    border-color: rgba(255, 255, 255, 0.12);
+                .is-active .ind-row-ghost {
+                    color: rgba(255, 255, 255, 0.03);
                 }
 
-                .ind-card-content {
+                /* Content */
+                .ind-row-content {
                     position: relative;
                     z-index: 2;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
-                    padding: 2rem;
-                    min-height: 340px;
+                    padding: 2.75rem 0;
                 }
 
-                .ind-card-top {
+                .ind-row-head {
                     display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    margin-bottom: 1rem;
+                    align-items: baseline;
+                    gap: 2.5rem;
                 }
 
-                .ind-card-number {
+                .ind-row-number {
                     font-family: var(--font-mono);
                     font-size: 0.7rem;
                     letter-spacing: 0.15em;
-                    color: rgba(255, 255, 255, 0.25);
-                    transition: color 0.4s ease;
+                    color: rgba(255, 255, 255, 0.2);
+                    min-width: 2.5rem;
+                    transition: color 0.5s ease;
+                    padding-top: 0.3rem;
                 }
 
-                .is-hovered .ind-card-number {
+                .is-active .ind-row-number {
                     color: rgba(255, 255, 255, 0.6);
                 }
 
-                .ind-card-arrow {
-                    color: rgba(255, 255, 255, 0.1);
-                    transform: translate(-4px, 4px);
-                    transition: color 0.4s ease, transform 0.4s cubic-bezier(0.03, 0.98, 0.52, 0.99);
-                }
-
-                .is-hovered .ind-card-arrow {
-                    color: rgba(255, 255, 255, 0.5);
-                    transform: translate(0, 0);
-                }
-
-                .ind-card-watermark {
-                    position: absolute;
-                    top: 50%;
-                    right: 1.5rem;
-                    transform: translateY(-50%);
+                .ind-row-name {
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(7rem, 12vw, 11rem);
+                    font-size: clamp(2.5rem, 6vw, 5.5rem);
                     font-weight: 300;
-                    line-height: 1;
-                    color: rgba(255, 255, 255, 0.015);
-                    pointer-events: none;
-                    transition: color 0.6s ease;
-                    z-index: 0;
-                    user-select: none;
-                }
-
-                .is-hovered .ind-card-watermark {
-                    color: rgba(255, 255, 255, 0.04);
-                }
-
-                .ind-card-body {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    position: relative;
-                    z-index: 1;
-                }
-
-                .ind-card-name {
-                    font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(1.75rem, 2.8vw, 2.4rem);
-                    font-weight: 300;
-                    color: rgba(255, 255, 255, 0.55);
-                    margin: 0 0 1rem;
-                    line-height: 1.15;
-                    letter-spacing: -0.01em;
-                    transition: color 0.4s ease, letter-spacing 0.5s ease;
-                }
-
-                .is-hovered .ind-card-name {
-                    color: #fff;
-                    letter-spacing: 0.01em;
-                }
-
-                .ind-card-desc {
-                    font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(0.9rem, 1.1vw, 1.05rem);
-                    font-style: italic;
-                    line-height: 1.7;
-                    color: rgba(255, 255, 255, 0.15);
-                    margin: 0;
-                    max-width: 380px;
-                    transform: translateY(8px);
-                    opacity: 0;
-                    transition: opacity 0.5s ease 0.05s, transform 0.5s cubic-bezier(0.03, 0.98, 0.52, 0.99) 0.05s, color 0.4s ease;
-                }
-
-                .is-hovered .ind-card-desc {
-                    opacity: 1;
-                    transform: translateY(0);
                     color: rgba(255, 255, 255, 0.4);
-                }
-
-                .ind-card-footer {
-                    margin-top: 1.5rem;
-                    position: relative;
-                    z-index: 1;
-                }
-
-                .ind-card-tags {
+                    margin: 0;
+                    flex: 1;
+                    line-height: 1.1;
+                    letter-spacing: -0.02em;
+                    transition: text-shadow 0.6s ease;
                     display: flex;
-                    gap: 0.5rem;
                     flex-wrap: wrap;
                 }
 
-                .ind-card-tag {
-                    font-family: var(--font-mono);
-                    font-size: 0.6rem;
-                    letter-spacing: 0.1em;
-                    text-transform: uppercase;
-                    color: rgba(255, 255, 255, 0.15);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    padding: 0.3rem 0.65rem;
-                    border-radius: 100px;
-                    transition: border-color 0.4s ease, color 0.4s ease;
-                    white-space: nowrap;
+                .is-active .ind-row-name {
+                    text-shadow: 0 0 60px rgba(255, 255, 255, 0.15),
+                                 0 0 120px rgba(255, 255, 255, 0.05);
                 }
 
-                .is-hovered .ind-card-tag {
-                    border-color: rgba(255, 255, 255, 0.15);
+                /* Per-character color transition */
+                .ind-char {
+                    display: inline-block;
                     color: rgba(255, 255, 255, 0.4);
+                    transition: color 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .is-active .ind-char {
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
+
+                .ind-row-arrow {
+                    color: rgba(255, 255, 255, 0.08);
+                    transform: translate(-8px, 8px) rotate(0deg);
+                    transition: color 0.5s ease,
+                                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+                    flex-shrink: 0;
+                    align-self: center;
+                }
+
+                .is-active .ind-row-arrow {
+                    color: rgba(255, 255, 255, 0.4);
+                    transform: translate(0, 0) rotate(0deg);
+                }
+
+                /* Description */
+                .ind-row-desc-wrap {
+                    clip-path: inset(0% 100% 0% 0%);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+
+                .ind-row-desc {
+                    font-family: 'Cormorant Garamond', var(--font-serif);
+                    font-size: clamp(1rem, 1.4vw, 1.2rem);
+                    font-style: italic;
+                    line-height: 1.7;
+                    color: rgba(255, 255, 255, 0.4);
+                    margin: 0;
+                    padding: 1.25rem 0 0 5rem;
+                    max-width: 600px;
+                }
+
+                /* Tags */
+                .ind-row-tags-wrap {
+                    clip-path: inset(0% 100% 0% 0%);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+
+                .ind-row-tags {
+                    display: flex;
+                    gap: 0.75rem;
+                    padding: 1.25rem 0 0.5rem 5rem;
+                    flex-wrap: wrap;
+                }
+
+                .ind-row-tag {
+                    font-family: var(--font-mono);
+                    font-size: 0.6rem;
+                    letter-spacing: 0.12em;
+                    text-transform: uppercase;
+                    color: rgba(255, 255, 255, 0.25);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    padding: 0.35rem 0.75rem;
+                    border-radius: 0;
+                    transition: border-color 0.4s ease, color 0.4s ease;
+                }
+
+                .is-active .ind-row-tag {
+                    border-color: rgba(255, 255, 255, 0.18);
+                    color: rgba(255, 255, 255, 0.45);
+                }
+
+                /* Rule line */
+                .ind-row-rule {
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.06);
+                    transform-origin: left center;
                 }
 
                 @media (max-width: 768px) {
-                    .ind-card-content {
-                        padding: 1.5rem;
-                        min-height: 260px;
+                    .ind-row-content {
+                        padding: 2rem 0;
                     }
 
-                    .ind-card-desc {
-                        opacity: 1;
-                        transform: translateY(0);
-                        color: rgba(255, 255, 255, 0.3);
+                    .ind-row-head {
+                        gap: 1.25rem;
                     }
 
-                    .ind-card-watermark {
-                        font-size: 5rem;
+                    .ind-row-desc {
+                        padding-left: 3.75rem;
+                    }
+
+                    .ind-row-tags {
+                        padding-left: 3.75rem;
+                    }
+
+                    .ind-row-ghost {
+                        font-size: 6rem;
+                        right: -5%;
                     }
                 }
             `}</style>
@@ -374,6 +358,7 @@ const IndustryCard = ({ industry, index }: CardProps) => {
 
 const Industries = () => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const [isVisible, setIsVisible] = useState(false);
 
     // Intersection observer for entrance
@@ -385,7 +370,7 @@ const Industries = () => {
                     observer.disconnect();
                 }
             },
-            { threshold: 0.05 }
+            { threshold: 0.08 }
         );
 
         if (containerRef.current) {
@@ -395,86 +380,84 @@ const Industries = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Entrance animations
+    // Entrance animations — orchestrated sequence
     useEffect(() => {
         if (!isVisible || !containerRef.current) return;
 
         const ctx = gsap.context(() => {
-            // Label entrance
+            // 1. Label slides in
             gsap.fromTo(
                 '.ind-label',
-                { opacity: 0, x: -20 },
-                { opacity: 1, x: 0, duration: 0.6, ease: 'power2.out' }
+                { opacity: 0, x: -30 },
+                { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }
             );
 
-            // Title word-by-word reveal
-            const titleWords = gsap.utils.toArray<HTMLElement>('.ind-title-word');
-            titleWords.forEach((word, i) => {
-                const inner = word.querySelector('.ind-title-word-inner');
-                if (!inner) return;
+            // 2. Title lines reveal with clip-path (like About section)
+            const titleLines = gsap.utils.toArray<HTMLElement>('.ind-title-line');
+            titleLines.forEach((line, i) => {
                 gsap.fromTo(
-                    inner,
-                    { y: '120%', rotateX: 25, opacity: 0 },
+                    line,
+                    { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 },
                     {
-                        y: '0%',
-                        rotateX: 0,
+                        clipPath: 'inset(0% 0% 0% 0%)',
                         opacity: 1,
-                        duration: 1,
-                        delay: 0.15 + i * 0.06,
-                        ease: 'power4.out',
-                    }
-                );
-            });
-
-            // Subtitle
-            gsap.fromTo(
-                '.ind-subtitle',
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.8, delay: 0.6, ease: 'power3.out' }
-            );
-
-            // Cards stagger entrance with alternating vertical offset
-            const cards = gsap.utils.toArray<HTMLElement>('.ind-card-wrapper');
-            cards.forEach((card, i) => {
-                gsap.fromTo(
-                    card,
-                    { opacity: 0, y: 50 + (i % 2) * 20, scale: 0.97 },
-                    {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 1,
-                        delay: 0.4 + i * 0.08,
+                        duration: 0.9,
+                        delay: 0.2 + i * 0.15,
                         ease: 'power3.out',
                     }
                 );
             });
 
-            // Bottom line
-            gsap.fromTo(
-                '.ind-bottom-line',
-                { scaleX: 0 },
-                { scaleX: 1, duration: 1.2, delay: 1.0, ease: 'power3.inOut' }
-            );
+            // 3. Rule lines draw themselves in — staggered with scroll
+            const rules = gsap.utils.toArray<HTMLElement>('.ind-row-rule');
+            rules.forEach((rule, i) => {
+                gsap.fromTo(
+                    rule,
+                    { scaleX: 0 },
+                    {
+                        scaleX: 1,
+                        duration: 1,
+                        delay: 0.5 + i * 0.08,
+                        ease: 'power3.inOut',
+                    }
+                );
+            });
 
-            // Counter
+            // 4. Rows fade up in sequence
+            const rows = gsap.utils.toArray<HTMLElement>('.ind-row');
+            rows.forEach((row, i) => {
+                gsap.fromTo(
+                    row.querySelector('.ind-row-content'),
+                    { opacity: 0, y: 30 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        delay: 0.6 + i * 0.1,
+                        ease: 'power3.out',
+                    }
+                );
+            });
+
+            // 5. Counter
             gsap.fromTo(
                 '.ind-counter',
-                { opacity: 0 },
-                { opacity: 1, duration: 0.6, delay: 1.4, ease: 'power2.out' }
+                { opacity: 0, y: 15 },
+                { opacity: 1, y: 0, duration: 0.6, delay: 1.4, ease: 'power2.out' }
             );
         }, containerRef);
 
         return () => ctx.revert();
     }, [isVisible]);
 
-    // Parallax on title
+    // Scroll-driven parallax: ghost numbers drift at different rate
     useEffect(() => {
         if (!containerRef.current) return;
 
         const ctx = gsap.context(() => {
+            // Title parallax
             gsap.to('.ind-title', {
-                y: -40,
+                y: -50,
                 ease: 'none',
                 scrollTrigger: {
                     trigger: containerRef.current,
@@ -483,22 +466,28 @@ const Industries = () => {
                     scrub: 1.5,
                 },
             });
+
+            // Ghost numbers parallax — each drifts independently
+            const ghosts = gsap.utils.toArray<HTMLElement>('.ind-row-ghost');
+            ghosts.forEach((ghost, i) => {
+                gsap.to(ghost, {
+                    y: -30 - (i * 8),
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: ghost.parentElement,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 2,
+                    },
+                });
+            });
         }, containerRef);
 
         return () => ctx.revert();
     }, []);
 
-    const titleText = "Industries I've Transformed";
-    const titleWords = titleText.split(' ');
-
     return (
         <section ref={containerRef} id="industries" className="ind-section">
-            {/* Ambient white light orbs */}
-            <div className="ind-ambient" aria-hidden="true">
-                <div className="ind-orb ind-orb-1" />
-                <div className="ind-orb ind-orb-2" />
-            </div>
-
             <div className="ind-container">
                 {/* Header */}
                 <div className="ind-header">
@@ -509,34 +498,42 @@ const Industries = () => {
                     </div>
 
                     <h2 className="ind-title">
-                        {titleWords.map((word, i) => (
-                            <span key={i} className="ind-title-word">
-                                <span className={`ind-title-word-inner ${i >= 2 ? 'ind-accent' : ''}`}>
-                                    {word}
-                                </span>
-                            </span>
-                        ))}
+                        <span className="ind-title-line">
+                            From startups to enterprise,
+                        </span>
+                        <span className="ind-title-line">
+                            I architect solutions{' '}
+                            <em className="ind-title-accent">that scale.</em>
+                        </span>
                     </h2>
-
-                    <p className="ind-subtitle">
-                        From startups to enterprise, architecting solutions that scale across verticals.
-                    </p>
                 </div>
 
-                {/* Card Grid */}
-                <div className="ind-grid">
+                {/* First rule line */}
+                <div className="ind-row-rule ind-rule-first" />
+
+                {/* Industry Rows */}
+                <div className="ind-list">
                     {industries.map((industry, index) => (
-                        <IndustryCard key={index} industry={industry} index={index} />
+                        <IndustryRow
+                            key={index}
+                            industry={industry}
+                            index={index}
+                            isActive={activeIndex === index}
+                            onEnter={() => setActiveIndex(index)}
+                            onLeave={() => setActiveIndex(null)}
+                        />
                     ))}
                 </div>
 
-                {/* Bottom */}
-                <div className="ind-bottom">
-                    <div className="ind-bottom-line" />
-                    <div className="ind-counter">
-                        <span className="ind-counter-label">Domains of expertise</span>
-                        <span className="ind-counter-value">{String(industries.length).padStart(2, '0')}</span>
-                    </div>
+                {/* Counter */}
+                <div className="ind-counter">
+                    <span className="ind-counter-label">Domains of expertise</span>
+                    <span className="ind-counter-value">
+                        {activeIndex !== null
+                            ? `${String(activeIndex + 1).padStart(2, '0')} / ${String(industries.length).padStart(2, '0')}`
+                            : String(industries.length).padStart(2, '0')
+                        }
+                    </span>
                 </div>
             </div>
 
@@ -547,63 +544,18 @@ const Industries = () => {
                     background: #000;
                     overflow: hidden;
                     min-height: 100vh;
-                }
-
-                /* Ambient white light — monochrome only */
-                .ind-ambient {
-                    position: absolute;
-                    inset: 0;
-                    overflow: hidden;
-                    pointer-events: none;
-                    z-index: 0;
-                }
-
-                .ind-orb {
-                    position: absolute;
-                    border-radius: 50%;
-                    filter: blur(120px);
-                }
-
-                .ind-orb-1 {
-                    width: 600px;
-                    height: 600px;
-                    background: radial-gradient(circle, rgba(255, 255, 255, 0.025), transparent 70%);
-                    top: 5%;
-                    left: -10%;
-                    animation: ind-float-1 25s ease-in-out infinite;
-                }
-
-                .ind-orb-2 {
-                    width: 500px;
-                    height: 500px;
-                    background: radial-gradient(circle, rgba(255, 255, 255, 0.02), transparent 70%);
-                    bottom: 0%;
-                    right: -8%;
-                    animation: ind-float-2 30s ease-in-out infinite;
-                }
-
-                @keyframes ind-float-1 {
-                    0%, 100% { transform: translate(0, 0); }
-                    33% { transform: translate(30px, -20px); }
-                    66% { transform: translate(-15px, 15px); }
-                }
-
-                @keyframes ind-float-2 {
-                    0%, 100% { transform: translate(0, 0); }
-                    33% { transform: translate(-25px, 30px); }
-                    66% { transform: translate(20px, -10px); }
+                    display: flex;
+                    align-items: center;
                 }
 
                 .ind-container {
-                    position: relative;
-                    z-index: 1;
                     max-width: 1300px;
                     width: 100%;
                     margin: 0 auto;
                     padding: 10rem 4rem 8rem;
                 }
 
-                /* Header */
+                /* ---- Header ---- */
                 .ind-header {
                     margin-bottom: 5rem;
                 }
@@ -637,75 +589,50 @@ const Industries = () => {
                     color: rgba(255, 255, 255, 0.5);
                 }
 
-                /* Title */
+                /* ---- Title ---- */
                 .ind-title {
                     font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+                    font-size: clamp(2.5rem, 5vw, 4rem);
                     font-weight: 300;
-                    line-height: 1.15;
+                    line-height: 1.3;
                     color: #fff;
-                    margin: 0 0 1.5rem;
+                    margin: 0;
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 0 0.25em;
-                    perspective: 600px;
+                    flex-direction: column;
                     will-change: transform;
                 }
 
-                .ind-title-word {
-                    display: inline-block;
-                    overflow: hidden;
-                    vertical-align: top;
-                }
-
-                .ind-title-word-inner {
-                    display: inline-block;
-                    will-change: transform, opacity;
-                    transform-origin: bottom center;
-                }
-
-                .ind-accent {
-                    color: rgba(255, 255, 255, 0.35);
-                    font-style: italic;
-                }
-
-                .ind-subtitle {
-                    font-family: 'Cormorant Garamond', var(--font-serif);
-                    font-size: clamp(1rem, 1.3vw, 1.15rem);
-                    font-style: italic;
-                    line-height: 1.6;
-                    color: rgba(255, 255, 255, 0.3);
-                    margin: 0;
-                    max-width: 550px;
+                .ind-title-line {
+                    display: block;
+                    clip-path: inset(100% 0% 0% 0%);
                     opacity: 0;
+                    will-change: clip-path, opacity;
                 }
 
-                /* Grid */
-                .ind-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 1.25rem;
-                    margin-bottom: 4rem;
+                .ind-title-accent {
+                    color: rgba(255, 255, 255, 0.4);
+                    font-style: italic;
                 }
 
-                /* Bottom */
-                .ind-bottom {
-                    padding-top: 0;
+                /* ---- List ---- */
+                .ind-list {
+                    margin-bottom: 3rem;
                 }
 
-                .ind-bottom-line {
+                .ind-rule-first {
                     height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+                    background: rgba(255, 255, 255, 0.06);
                     transform-origin: left center;
-                    transform: scaleX(0);
-                    margin-bottom: 1.5rem;
+                    margin-bottom: 0;
                 }
 
+                /* ---- Counter ---- */
                 .ind-counter {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     opacity: 0;
+                    padding-top: 2rem;
                 }
 
                 .ind-counter-label {
@@ -718,25 +645,21 @@ const Industries = () => {
 
                 .ind-counter-value {
                     font-family: var(--font-mono);
-                    font-size: 0.8rem;
+                    font-size: 0.85rem;
                     letter-spacing: 0.1em;
-                    color: rgba(255, 255, 255, 0.35);
+                    color: rgba(255, 255, 255, 0.4);
+                    transition: all 0.3s ease;
                 }
 
                 @media (max-width: 1024px) {
                     .ind-container {
                         padding: 7rem 2.5rem 6rem;
                     }
-
-                    .ind-grid {
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 1rem;
-                    }
                 }
 
                 @media (max-width: 768px) {
                     .ind-container {
-                        padding: 5rem 1.25rem 4rem;
+                        padding: 5rem 1.5rem 4rem;
                     }
 
                     .ind-header {
@@ -745,15 +668,6 @@ const Industries = () => {
 
                     .ind-label {
                         margin-bottom: 1.5rem;
-                    }
-
-                    .ind-grid {
-                        grid-template-columns: 1fr;
-                        gap: 0.75rem;
-                    }
-
-                    .ind-subtitle {
-                        max-width: 100%;
                     }
                 }
             `}</style>
