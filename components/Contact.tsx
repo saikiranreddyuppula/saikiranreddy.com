@@ -320,7 +320,7 @@ const Contact = () => {
           </div>
 
           <p className="contact-tagline">
-            Available for full-time positions, consulting, and select projects.
+            Available for full-time positions and consulting.
           </p>
         </div>
 

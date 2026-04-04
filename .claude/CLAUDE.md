@@ -5,6 +5,9 @@
 - Dev server: `npm run dev` (runs on localhost:3000 with Turbopack)
 - Build: `npm run build`
 
+## Design Rules
+- **Monochrome only**: The entire website uses a strictly monochrome palette (black, white, shades of grey). Never introduce any color (no blues, reds, greens, ambers, etc.). All accents, glows, borders, and highlights must be white at varying opacities.
+
 ## Testing Fixes with Playwright MCP
 
 When the user asks to fix something (UI bug, layout issue, visual glitch, broken interaction, etc.), always verify the fix using the playwright-mcp tools **before** considering the fix complete. Follow these steps:
