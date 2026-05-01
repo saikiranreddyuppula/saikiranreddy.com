@@ -14,8 +14,25 @@ const Navbar = () => {
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
+  const [stretching, setStretching] = useState(false);
   const lenis = useLenis();
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const stretchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstActiveRef = useRef(true);
+
+  // Stretch indicator into a pill briefly whenever active changes
+  useEffect(() => {
+    if (isFirstActiveRef.current) {
+      isFirstActiveRef.current = false;
+      return;
+    }
+    setStretching(true);
+    if (stretchTimerRef.current) clearTimeout(stretchTimerRef.current);
+    stretchTimerRef.current = setTimeout(() => setStretching(false), 420);
+    return () => {
+      if (stretchTimerRef.current) clearTimeout(stretchTimerRef.current);
+    };
+  }, [active]);
 
   // Track which section is in view
   useEffect(() => {
@@ -80,13 +97,13 @@ const Navbar = () => {
 
   return (
     <nav className={`navbar ${visible ? "navbar--visible" : ""}`}>
-      <div className="navbar-track">
+      <div
+        className="navbar-track"
+        style={{ ["--active" as never]: active }}
+      >
         {/* Active indicator pill */}
         <div
-          className="navbar-indicator"
-          style={{
-            transform: `translateX(-50%) translateY(${active * 32}px)`,
-          }}
+          className={`navbar-indicator ${stretching ? "navbar-indicator--stretching" : ""}`}
         />
 
         {sections.map((section, i) => (
@@ -126,24 +143,37 @@ const Navbar = () => {
         }
 
         .navbar-track {
+          --dot-size: 8px;
+          --dot-gap: 24px;
+          --indicator-size: 16px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 24px;
+          gap: var(--dot-gap);
           position: relative;
         }
 
         .navbar-indicator {
           position: absolute;
-          top: -4px;
+          top: calc((var(--dot-size) - var(--indicator-size)) / 2);
           left: 50%;
-          width: 16px;
-          height: 16px;
+          width: var(--indicator-size);
+          height: var(--indicator-size);
           border-radius: 50%;
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.5);
-          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: center;
+          transition: transform 0.75s cubic-bezier(0.34, 1.3, 0.5, 1);
           pointer-events: none;
+          will-change: transform;
+          transform: translateX(-50%)
+            translateY(calc(var(--active, 0) * (var(--dot-size) + var(--dot-gap))));
+        }
+
+        .navbar-indicator--stretching {
+          transform: translateX(-50%)
+            translateY(calc(var(--active, 0) * (var(--dot-size) + var(--dot-gap))))
+            scale(0.78, 1.45);
         }
 
         .navbar-dot {
@@ -151,8 +181,8 @@ const Navbar = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 8px;
-          height: 8px;
+          width: var(--dot-size);
+          height: var(--dot-size);
           background: none;
           border: none;
           padding: 0;
@@ -210,9 +240,9 @@ const Navbar = () => {
         }
 
         @media (pointer: coarse) {
-          .navbar-dot {
-            width: 20px;
-            height: 20px;
+          .navbar-track {
+            --dot-size: 20px;
+            --indicator-size: 22px;
           }
 
           .dot-core {
