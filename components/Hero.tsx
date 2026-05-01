@@ -224,13 +224,13 @@ const Hero = () => {
       },
     });
 
-    // Fade hero text + scroll cue as user scrolls
+    // Hold text/cue visible until late in the pin so we don't show a blank glow mid-scroll.
     scrollTl.to(
       ".hero-text",
-      { opacity: 0, y: -30, duration: 0.5 },
-      0,
+      { opacity: 0, y: -30, duration: 0.3 },
+      0.7,
     );
-    scrollTl.to(".scroll-cue", { opacity: 0, duration: 1 }, 0);
+    scrollTl.to(".scroll-cue", { opacity: 0, duration: 0.3 }, 0.7);
 
     return () => {
       introTl.kill();
