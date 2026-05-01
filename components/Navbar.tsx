@@ -14,8 +14,25 @@ const Navbar = () => {
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
+  const [stretching, setStretching] = useState(false);
   const lenis = useLenis();
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const stretchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstActiveRef = useRef(true);
+
+  // Stretch indicator into a pill briefly whenever active changes
+  useEffect(() => {
+    if (isFirstActiveRef.current) {
+      isFirstActiveRef.current = false;
+      return;
+    }
+    setStretching(true);
+    if (stretchTimerRef.current) clearTimeout(stretchTimerRef.current);
+    stretchTimerRef.current = setTimeout(() => setStretching(false), 420);
+    return () => {
+      if (stretchTimerRef.current) clearTimeout(stretchTimerRef.current);
+    };
+  }, [active]);
 
   // Track which section is in view
   useEffect(() => {
@@ -85,7 +102,9 @@ const Navbar = () => {
         style={{ ["--active" as never]: active }}
       >
         {/* Active indicator pill */}
-        <div className="navbar-indicator" />
+        <div
+          className={`navbar-indicator ${stretching ? "navbar-indicator--stretching" : ""}`}
+        />
 
         {sections.map((section, i) => (
           <button
@@ -143,10 +162,18 @@ const Navbar = () => {
           border-radius: 50%;
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.5);
-          transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: center;
+          transition: transform 0.75s cubic-bezier(0.34, 1.3, 0.5, 1);
           pointer-events: none;
+          will-change: transform;
           transform: translateX(-50%)
             translateY(calc(var(--active, 0) * (var(--dot-size) + var(--dot-gap))));
+        }
+
+        .navbar-indicator--stretching {
+          transform: translateX(-50%)
+            translateY(calc(var(--active, 0) * (var(--dot-size) + var(--dot-gap))))
+            scale(0.78, 1.45);
         }
 
         .navbar-dot {
