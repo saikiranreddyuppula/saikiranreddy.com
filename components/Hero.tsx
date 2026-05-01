@@ -52,7 +52,6 @@ const Hero = () => {
   const scrollProgress = useRef(0);
   const lenisRef = useRef<any>(null);
   const isTransitioning = useRef(false);
-  const taglineRef = useRef<HTMLParagraphElement>(null);
 
   const heroChars = useMemo(
     () => splitText("Find the light within", "hero-char", "hero-light-char"),
@@ -128,113 +127,105 @@ const Hero = () => {
       repeatDelay: 0.3,
     });
 
-    // === Scroll-responsive: letter-spacing shift on scroll ===
-    const scrollTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "+=100%",
-        pin: true,
-        pinSpacing: false,
-        scrub: 0.3,
-        onUpdate: (self) => {
-          scrollProgress.current = self.progress;
+    // === Exit transition: short pin detects scroll intent, then plays a
+    // one-shot zoom-into-source + white flash + jump to next section. We
+    // intentionally do NOT scrub the camera/glow with scroll so the user
+    // never dwells on the expanded bright-glow state.
+    const exitTrigger = ScrollTrigger.create({
+      trigger: containerRef.current,
+      start: "top top",
+      end: "+=10%",
+      pin: true,
+      pinSpacing: false,
+      onLeave: () => {
+        if (isTransitioning.current) return;
+        isTransitioning.current = true;
 
-          // Scroll-responsive letter spacing on individual characters
-          const progress = self.progress;
-          if (taglineRef.current) {
-            // Subtle letter-spacing expansion as user scrolls
-            const spacing = progress * 0.15; // max 0.15em extra
-            taglineRef.current.style.letterSpacing = `${0.05 + spacing}em`;
-          }
+        const lenis = lenisRef.current;
+        if (lenis) lenis.stop();
 
-          // Per-character subtle vertical drift based on scroll
-          chars.forEach((char, i) => {
-            const offset = Math.sin(i * 0.7 + progress * Math.PI) * progress * 4;
-            gsap.set(char, { y: offset });
-          });
-        },
-        onLeave: () => {
-          if (isTransitioning.current) return;
-          isTransitioning.current = true;
+        const tl = gsap.timeline({
+          onComplete: () => {
+            if (lenis) lenis.start();
+          },
+        });
 
-          const lenis = lenisRef.current;
+        // Quick zoom: drive HeroScene's scrollProgress 0 → 1 over ~0.45s.
+        // CameraController uses this to dive z toward the source and the
+        // CenterGlow shader uses it to bloom — together they "rush in".
+        tl.to(
+          scrollProgress,
+          { current: 1, duration: 0.45, ease: "power3.in" },
+          0,
+        );
 
-          // Smooth crossfade: fade hero out, then scroll to about
-          if (containerRef.current) {
-            gsap.to(containerRef.current, {
-              opacity: 0,
-              scale: 0.97,
-              duration: 0.3,
-              ease: "power2.inOut",
-              onComplete: () => {
-                if (containerRef.current) {
-                  containerRef.current.style.visibility = "hidden";
-                }
+        // Fade tagline + scroll cue out alongside the rush-in.
+        tl.to(
+          [".hero-text", ".scroll-cue"],
+          { opacity: 0, duration: 0.2, ease: "power2.in" },
+          0,
+        );
 
-                // Scroll to about section
-                const aboutEl = document.getElementById("about");
-                if (aboutEl) {
-                  window.scrollTo({
-                    top: aboutEl.offsetTop,
-                    behavior: "instant" as ScrollBehavior,
-                  });
-                }
-                if (lenis) lenis.stop();
+        // White flash builds as the camera meets the source.
+        tl.set(
+          ".hero-flash",
+          { visibility: "visible", background: "#fff" },
+          0,
+        );
+        tl.to(
+          ".hero-flash",
+          { opacity: 1, duration: 0.3, ease: "power2.in" },
+          0.2,
+        );
 
-                // Reveal about with a slight delay
-                window.dispatchEvent(new Event("revealAbout"));
-
-                // Re-enable scrolling after about is revealed
-                gsap.delayedCall(0.15, () => {
-                  if (lenis) lenis.start();
-                  isTransitioning.current = false;
-                });
-              },
-            });
-          }
-        },
-        onEnterBack: () => {
-          isTransitioning.current = false;
-
-          if (containerRef.current) {
-            containerRef.current.style.visibility = "visible";
-            gsap.to(containerRef.current, {
-              opacity: 1,
-              scale: 1,
-              duration: 0.25,
-              ease: "power2.out",
-            });
-          }
-
-          // Reset letter-spacing
-          if (taglineRef.current) {
-            taglineRef.current.style.letterSpacing = "0.05em";
-          }
-
-          // Reset character positions
-          chars.forEach((char) => {
-            gsap.set(char, { y: 0 });
-          });
-
-          // Hide about section so it doesn't leak through on next scroll
+        // At peak flash, swap hero out and reveal about under the white.
+        tl.add(() => {
           const aboutEl = document.getElementById("about");
-          if (aboutEl) aboutEl.style.visibility = "hidden";
-        },
+          if (aboutEl) {
+            window.scrollTo({
+              top: aboutEl.offsetTop,
+              behavior: "instant" as ScrollBehavior,
+            });
+          }
+          if (containerRef.current) {
+            containerRef.current.style.visibility = "hidden";
+          }
+          window.dispatchEvent(new Event("revealAbout"));
+        }, 0.5);
+
+        // Flash fades out to reveal the next section.
+        tl.to(
+          ".hero-flash",
+          { opacity: 0, duration: 0.4, ease: "power2.out" },
+          0.55,
+        );
+        tl.set(".hero-flash", {
+          visibility: "hidden",
+          background: "#000",
+        });
+
+        tl.add(() => {
+          isTransitioning.current = false;
+        });
+      },
+      onEnterBack: () => {
+        isTransitioning.current = false;
+        scrollProgress.current = 0;
+
+        if (containerRef.current) {
+          containerRef.current.style.visibility = "visible";
+          gsap.set(containerRef.current, { opacity: 1, scale: 1 });
+        }
+        gsap.set([".hero-text", ".scroll-cue"], { opacity: 1, y: 0 });
+
+        const aboutEl = document.getElementById("about");
+        if (aboutEl) aboutEl.style.visibility = "hidden";
       },
     });
 
-    // Fade hero text + scroll cue as user scrolls
-    scrollTl.to(
-      ".hero-text",
-      { opacity: 0, y: -30, duration: 0.5 },
-      0,
-    );
-    scrollTl.to(".scroll-cue", { opacity: 0, duration: 1 }, 0);
-
     return () => {
       introTl.kill();
-      scrollTl.kill();
+      exitTrigger.kill();
       gsap.killTweensOf(lightChars);
       gsap.killTweensOf(chars);
     };
@@ -245,9 +236,7 @@ const Hero = () => {
       <HeroScene scrollProgress={scrollProgress} />
 
       <div className="hero-text">
-        <p className="hero-tagline interactive" ref={taglineRef}>
-          {heroChars}
-        </p>
+        <p className="hero-tagline interactive">{heroChars}</p>
 
         {/* Minimal scroll indicator: thin animated line */}
         <div className="hero-scroll-line-wrap interactive">
