@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import dynamic from "next/dynamic";
@@ -53,6 +53,7 @@ const Hero = () => {
   const lenisRef = useRef<any>(null);
   const isTransitioning = useRef(false);
   const taglineRef = useRef<HTMLParagraphElement>(null);
+  const [sceneActive, setSceneActive] = useState(true);
 
   const heroChars = useMemo(
     () => splitText("Find the light within", "hero-char", "hero-light-char"),
@@ -103,13 +104,18 @@ const Hero = () => {
       "-=0.2",
     );
 
+    let heroMotionEnabled = true;
+    let glowTween: gsap.core.Tween | null = null;
+
     // === Random glow on "light" characters ===
     const randomGlow = () => {
+      if (!heroMotionEnabled || lightChars.length === 0) return;
+
       const intensity = 0.4 + Math.random() * 0.6;
       const spread = 15 + Math.random() * 50;
       const spread2 = 30 + Math.random() * 60;
       const duration = 0.3 + Math.random() * 1.2;
-      gsap.to(lightChars, {
+      glowTween = gsap.to(lightChars, {
         textShadow: `0 0 ${4 + Math.random() * 4}px #fff, 0 0 ${spread}px rgba(255,255,255,${intensity}), 0 0 ${spread2}px rgba(255,255,255,${intensity * 0.5})`,
         duration,
         ease: "power1.inOut",
@@ -119,7 +125,7 @@ const Hero = () => {
     randomGlow();
 
     // === Scroll-cue line animation ===
-    gsap.to(".scroll-cue-line", {
+    const scrollCueTween = gsap.to(".scroll-cue-line", {
       y: 24,
       opacity: 0,
       duration: 0.8,
@@ -127,6 +133,20 @@ const Hero = () => {
       repeat: -1,
       repeatDelay: 0.3,
     });
+
+    const pauseHeroMotion = () => {
+      heroMotionEnabled = false;
+      glowTween?.kill();
+      glowTween = null;
+      scrollCueTween.pause(0);
+    };
+
+    const resumeHeroMotion = () => {
+      if (heroMotionEnabled) return;
+      heroMotionEnabled = true;
+      scrollCueTween.play();
+      randomGlow();
+    };
 
     // === Scroll-responsive: letter-spacing shift on scroll ===
     const scrollTl = gsap.timeline({
@@ -166,38 +186,39 @@ const Hero = () => {
               opacity: 0,
               scale: 0.97,
               duration: 0.3,
-              ease: "power2.inOut",
-              onComplete: () => {
-                if (containerRef.current) {
-                  containerRef.current.style.visibility = "hidden";
-                }
+	              ease: "power2.inOut",
+	              onComplete: () => {
+	                if (containerRef.current) {
+	                  containerRef.current.style.visibility = "hidden";
+	                }
+	                setSceneActive(false);
+	                pauseHeroMotion();
 
-                // Scroll to about section
-                const aboutEl = document.getElementById("about");
-                if (aboutEl) {
-                  window.scrollTo({
-                    top: aboutEl.offsetTop,
+	                // Scroll to the first content section after the pinned hero.
+	                const practiceEl = document.getElementById("practice");
+	                if (practiceEl) {
+	                  window.scrollTo({
+                    top: practiceEl.offsetTop,
                     behavior: "instant" as ScrollBehavior,
                   });
                 }
                 if (lenis) lenis.stop();
-
-                // Reveal about with a slight delay
-                window.dispatchEvent(new Event("revealAbout"));
 
                 // Re-enable scrolling after about is revealed
                 gsap.delayedCall(0.15, () => {
                   if (lenis) lenis.start();
                   isTransitioning.current = false;
                 });
-              },
-            });
-          }
-        },
-        onEnterBack: () => {
-          isTransitioning.current = false;
+	              },
+	            });
+	          }
+	        },
+	        onEnterBack: () => {
+	          isTransitioning.current = false;
+	          setSceneActive(true);
+	          resumeHeroMotion();
 
-          if (containerRef.current) {
+	          if (containerRef.current) {
             containerRef.current.style.visibility = "visible";
             gsap.to(containerRef.current, {
               opacity: 1,
@@ -217,9 +238,6 @@ const Hero = () => {
             gsap.set(char, { y: 0 });
           });
 
-          // Hide about section so it doesn't leak through on next scroll
-          const aboutEl = document.getElementById("about");
-          if (aboutEl) aboutEl.style.visibility = "hidden";
         },
       },
     });
@@ -232,7 +250,23 @@ const Hero = () => {
     );
     scrollTl.to(".scroll-cue", { opacity: 0, duration: 1 }, 0);
 
+    if (window.location.hash && window.location.hash !== "#hero") {
+      if (containerRef.current) {
+        gsap.set(containerRef.current, {
+          opacity: 0,
+          scale: 0.97,
+          visibility: "hidden",
+        });
+      }
+      setSceneActive(false);
+      pauseHeroMotion();
+      gsap.delayedCall(0.1, () => ScrollTrigger.refresh());
+    }
+
     return () => {
+      heroMotionEnabled = false;
+      glowTween?.kill();
+      scrollCueTween.kill();
       introTl.kill();
       scrollTl.kill();
       gsap.killTweensOf(lightChars);
@@ -242,7 +276,7 @@ const Hero = () => {
 
   return (
     <section ref={containerRef} id="hero" className="hero">
-      <HeroScene scrollProgress={scrollProgress} />
+      <HeroScene scrollProgress={scrollProgress} active={sceneActive} />
 
       <div className="hero-text">
         <p className="hero-tagline interactive" ref={taglineRef}>

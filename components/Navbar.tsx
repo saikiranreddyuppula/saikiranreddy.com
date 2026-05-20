@@ -4,8 +4,7 @@ import { useLenis } from "lenis/react";
 
 const sections = [
   { id: "hero", label: "Home" },
-  { id: "about", label: "About" },
-  { id: "industries", label: "Work" },
+  { id: "practice", label: "Practice" },
   { id: "journey", label: "Journey" },
   { id: "contact", label: "Contact" },
 ];
@@ -15,15 +14,16 @@ const Navbar = () => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [visible, setVisible] = useState(false);
   const lenis = useLenis();
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const activeRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
 
   // Track which section is in view
   useEffect(() => {
     // Delay visibility so it doesn't flash during loader
     const showTimer = setTimeout(() => setVisible(true), 1800);
 
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
+    const updateActive = () => {
+      rafRef.current = null;
       const vh = window.innerHeight;
 
       // Find section closest to viewport center
@@ -41,29 +41,42 @@ const Navbar = () => {
         }
       });
 
-      setActive(closest);
+      if (closest !== activeRef.current) {
+        activeRef.current = closest;
+        setActive(closest);
+      }
+    };
+
+    const handleScroll = () => {
+      if (rafRef.current !== null) return;
+      rafRef.current = window.requestAnimationFrame(updateActive);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    updateActive();
 
     return () => {
       clearTimeout(showTimer);
       window.removeEventListener("scroll", handleScroll);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
     };
   }, []);
 
   const handleClick = useCallback(
     (id: string) => {
       const el = document.getElementById(id);
-      if (!el) return;
+      if (id !== "hero" && !el) return;
 
-      // Hero is pinned by GSAP with pinSpacing:false, so lenis can't
-      // resolve its scroll offset from the DOM element. Target 0 directly.
-      const target = id === "hero" ? 0 : el;
+      const target =
+        id === "hero"
+          ? 0
+          : Math.max(0, window.scrollY + el!.getBoundingClientRect().top);
 
       if (lenis) {
         lenis.scrollTo(target, {
+          force: true,
           duration: 1,
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
         });
@@ -71,7 +84,7 @@ const Navbar = () => {
         if (id === "hero") {
           window.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-          el.scrollIntoView({ behavior: "smooth" });
+          el!.scrollIntoView({ behavior: "smooth" });
         }
       }
     },
@@ -201,7 +214,7 @@ const Navbar = () => {
 
         @media (max-width: 768px) {
           .navbar {
-            right: 1rem;
+            display: none;
           }
 
           .dot-label {

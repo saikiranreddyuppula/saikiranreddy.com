@@ -22,6 +22,7 @@ const Loader = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const initializedRef = useRef(false);
   const finishedRef = useRef(false);
+  const disposedRef = useRef(false);
   const onFinishRef = useRef(onFinish);
 
   useEffect(() => {
@@ -50,37 +51,103 @@ const Loader = ({
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+    disposedRef.current = false;
 
-    // Audio Setup
+    let endTimeInterval: number | null = null;
+    let handleResize: (() => void) | undefined;
+
+    const disposeLoader = () => {
+      if (disposedRef.current) return;
+      disposedRef.current = true;
+
+      if (handleResize) window.removeEventListener("resize", handleResize);
+
+      if (animationRef.current) {
+        window.cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+
+      if (endTimeInterval) {
+        window.clearInterval(endTimeInterval);
+        endTimeInterval = null;
+      }
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeAttribute("src");
+        audioRef.current.load();
+        audioRef.current = null;
+      }
+
+      lettersRef.current.forEach(({ mesh }) => {
+        mesh.geometry.dispose();
+        mesh.material.map?.dispose();
+        mesh.material.dispose();
+        mesh.removeFromParent();
+      });
+      lettersRef.current = [];
+
+      sceneRef.current?.clear();
+      sceneRef.current = null;
+      cameraRef.current = null;
+
+      const renderer = rendererRef.current;
+      if (renderer) {
+        renderer.renderLists.dispose();
+        renderer.dispose();
+        renderer.forceContextLoss();
+        renderer.domElement.remove();
+        rendererRef.current = null;
+      }
+    };
+
+    const finish = () => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
+      disposeLoader();
+      onFinishRef.current?.();
+    };
+
+    const canCreateWebGL = () => {
+      const canvas = document.createElement("canvas");
+      const context =
+        canvas.getContext("webgl2") || canvas.getContext("webgl");
+      context?.getExtension("WEBGL_lose_context")?.loseContext();
+      return Boolean(context);
+    };
+
     const setupAudio = async () => {
       try {
         audioRef.current = new Audio("/reveal.mp3");
         audioRef.current.volume = 0.35;
         if (audioStartTime > 0) audioRef.current.currentTime = audioStartTime;
         await audioRef.current.play();
-      } catch (e) {
-        // Audio failed silently
+      } catch {
+        // Audio can be blocked by the browser; the visual intro still runs.
       }
     };
-    setupAudio();
+    void setupAudio();
 
-    let endTimeInterval: NodeJS.Timeout | null = null;
     if (audioEndTime !== undefined) {
-      endTimeInterval = setInterval(() => {
+      endTimeInterval = window.setInterval(() => {
         if (
           audioRef.current &&
           !audioRef.current.paused &&
           audioRef.current.currentTime >= audioEndTime
         ) {
           audioRef.current.pause();
-          if (endTimeInterval) clearInterval(endTimeInterval);
+          if (endTimeInterval) window.clearInterval(endTimeInterval);
+          endTimeInterval = null;
         }
       }, 100);
     }
 
-    let handleResize: (() => void) | undefined;
-
     try {
+      if (!canCreateWebGL()) {
+        finish();
+        return disposeLoader;
+      }
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000000);
       sceneRef.current = scene;
@@ -90,7 +157,7 @@ const Loader = ({
         baseFov,
         window.innerWidth / window.innerHeight,
         0.1,
-        1000
+        1000,
       );
       cameraRef.current = camera;
 
@@ -127,10 +194,11 @@ const Loader = ({
         const context = canvas.getContext("2d");
         canvas.width = 512;
         canvas.height = 512;
-        
+
         if (context) {
           context.fillStyle = "#ffffff";
-          context.font = "bold 280px -apple-system, BlinkMacSystemFont, sans-serif";
+          context.font =
+            "bold 280px -apple-system, BlinkMacSystemFont, sans-serif";
           context.textAlign = "center";
           context.textBaseline = "middle";
           context.fillText(letter, canvas.width / 2, canvas.height / 2);
@@ -162,11 +230,13 @@ const Loader = ({
         scene.add(mesh);
       }
 
-      // Animation Loop
       const animate = (time: number) => {
+        if (disposedRef.current) return;
+
         if (zoomState.current.animating) {
           const elapsed = time - zoomState.current.startTime;
-          const easeOutExpo = (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+          const easeOutExpo = (t: number) =>
+            t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
           const progress = Math.min(elapsed / zoomState.current.duration, 1);
           const easedProgress = easeOutExpo(progress);
 
@@ -181,26 +251,22 @@ const Loader = ({
           renderer.render(scene, camera);
 
           if (progress >= 1) {
-            if (onFinishRef.current && !finishedRef.current) {
-              finishedRef.current = true;
-              onFinishRef.current();
-            }
+            finish();
             return;
           }
-          animationRef.current = requestAnimationFrame(animate);
+          animationRef.current = window.requestAnimationFrame(animate);
           return;
         }
 
         let allFinished = true;
         lettersRef.current.forEach((letterObj) => {
-          if (letterObj.startTime === null)
+          if (letterObj.startTime === null) {
             letterObj.startTime = time + letterObj.delay * 1000;
+          }
 
           if (letterObj.startTime !== null && time >= letterObj.startTime) {
             const elapsed = time - letterObj.startTime;
             const progress = Math.min(elapsed / (letterObj.duration * 1000), 1);
-            
-            // Smooth easing
             const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
             const easedProgress = easeOutCubic(progress);
 
@@ -221,10 +287,10 @@ const Loader = ({
           zoomState.current.startTime = time;
         }
 
-        animationRef.current = requestAnimationFrame(animate);
+        animationRef.current = window.requestAnimationFrame(animate);
       };
 
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = window.requestAnimationFrame(animate);
 
       handleResize = () => {
         if (cameraRef.current && rendererRef.current) {
@@ -238,27 +304,13 @@ const Loader = ({
         }
       };
       window.addEventListener("resize", handleResize);
-    } catch (e) {
+    } catch {
       // Some automated/headless browsers cannot create a WebGL context.
       // In that case, skip the intro instead of surfacing a runtime overlay.
-      if (onFinishRef.current && !finishedRef.current) {
-        finishedRef.current = true;
-        onFinishRef.current();
-      }
+      finish();
     }
 
-    return () => {
-      if (handleResize) window.removeEventListener("resize", handleResize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (endTimeInterval) clearInterval(endTimeInterval);
-    };
+    return disposeLoader;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -1,17 +1,24 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback } from "react";
 
 // Components
 import SmoothScroll from "../components/SmoothScroll";
 import Hero from "../components/Hero";
-import About from "../components/About";
-import Industries from "../components/Industries";
-import MountainSection from "../components/MountainScene";
-import Contact from "../components/Contact";
-import CustomCursor from "../components/CustomCursor";
+import Practice from "../components/Practice";
 import Navbar from "../components/Navbar";
 import Loader from "../components/Loader";
+
+const CustomCursor = dynamic(() => import("../components/CustomCursor"), {
+  ssr: false,
+});
+const MountainSection = dynamic(() => import("../components/MountainScene"), {
+  ssr: false,
+});
+const Contact = dynamic(() => import("../components/Contact"), {
+  ssr: false,
+});
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState(true);
@@ -24,6 +31,33 @@ const Home: NextPage = () => {
   const handleLoaderFinish = useCallback(() => {
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const requestedHash = window.location.hash.replace("#", "");
+    const hash =
+      requestedHash === "about" || requestedHash === "industries"
+        ? "practice"
+        : requestedHash;
+    if (!hash || hash === "hero") return;
+
+    const scrollToHashTarget = () => {
+      window.dispatchEvent(
+        new CustomEvent("portfolio:scroll-to", {
+          detail: { id: hash, immediate: true },
+        }),
+      );
+    };
+
+    const timers = [
+      window.setTimeout(scrollToHashTarget, 80),
+      window.setTimeout(scrollToHashTarget, 640),
+      window.setTimeout(scrollToHashTarget, 1400),
+    ];
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [loading]);
 
   return (
     <>
@@ -95,8 +129,7 @@ const Home: NextPage = () => {
           <Navbar />
           <main>
             <Hero />
-            <About />
-            <Industries />
+            <Practice />
             <MountainSection />
             <Contact />
           </main>

@@ -6,6 +6,53 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const TERRAIN_SEGMENTS = 128;
+const TERRAIN_NOISE_OCTAVES = 4;
+const ATMOSPHERE_PARTICLE_COUNT = 900;
+const STAR_COUNT = 700;
+const DISTANT_MOUNTAIN_SEGMENTS = 72;
+const FOG_LAYER_COUNT = 5;
+const BIRD_COUNT = 8;
+
+const getCameraPose = (progress: number) => {
+  if (progress < 0.3) {
+    const t = progress / 0.3;
+    return {
+      x: THREE.MathUtils.lerp(0, 10, t),
+      y: THREE.MathUtils.lerp(18, 24, t),
+      z: THREE.MathUtils.lerp(145, 92, t),
+      lookX: 0,
+      lookY: THREE.MathUtils.lerp(28, 36, t),
+      lookZ: 0,
+    };
+  }
+
+  if (progress < 0.7) {
+    const t = (progress - 0.3) / 0.4;
+    const angle = THREE.MathUtils.lerp(0.2, -0.1, t);
+    const radius = THREE.MathUtils.lerp(92, 28, t);
+    return {
+      x: Math.sin(angle) * radius,
+      y: THREE.MathUtils.lerp(24, 46, t),
+      z: Math.cos(angle) * radius,
+      lookX: 0,
+      lookY: THREE.MathUtils.lerp(36, 50, t),
+      lookZ: 0,
+    };
+  }
+
+  const t = (progress - 0.7) / 0.3;
+  const easeT = 1 - Math.pow(1 - t, 3);
+  return {
+    x: THREE.MathUtils.lerp(-3, 3, easeT),
+    y: THREE.MathUtils.lerp(46, 62, easeT),
+    z: THREE.MathUtils.lerp(28, 10, easeT),
+    lookX: 0,
+    lookY: THREE.MathUtils.lerp(50, 55, easeT),
+    lookZ: 0,
+  };
+};
+
 // Simplex noise implementation for terrain generation
 class SimplexNoise {
   private grad3: number[][];
@@ -102,16 +149,18 @@ class SimplexNoise {
 const MountainTerrain = () => {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  
-  const { geometry, heightData } = useMemo(() => {
+  const geometry = useMemo(() => {
     const simplex = new SimplexNoise(42);
     const size = 200;
-    const segments = 256;
-    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    const geometry = new THREE.PlaneGeometry(
+      size,
+      size,
+      TERRAIN_SEGMENTS,
+      TERRAIN_SEGMENTS,
+    );
     
     const positions = geometry.attributes.position.array as Float32Array;
-    const heightData: number[] = [];
-    
+
     const peakHeight = 60;
     const peakSigma = 28;
 
@@ -127,7 +176,7 @@ const MountainTerrain = () => {
       let detail = 0;
       let amplitude = 1;
       let frequency = 0.015;
-      for (let octave = 0; octave < 6; octave++) {
+      for (let octave = 0; octave < TERRAIN_NOISE_OCTAVES; octave++) {
         detail += simplex.noise2D(x * frequency, z * frequency) * amplitude;
         amplitude *= 0.5;
         frequency *= 2;
@@ -146,13 +195,12 @@ const MountainTerrain = () => {
       height = Math.max(height, foothills);
 
       positions[i + 2] = height;
-      heightData.push(height);
     }
     
     // Do not rotate geometry in-place, we will rotate the mesh
     geometry.computeVertexNormals();
     
-    return { geometry, heightData };
+    return geometry;
   }, []);
 
   // Custom shader for the mountain
@@ -161,11 +209,11 @@ const MountainTerrain = () => {
       uniforms: {
         uTime: { value: 0 },
         uFogColor: { value: new THREE.Color(0x000000) },
-        uFogNear: { value: 30 },
-        uFogFar: { value: 150 },
+        uFogNear: { value: 55 },
+        uFogFar: { value: 230 },
         uSnowLine: { value: 28 },
-        uRockColor: { value: new THREE.Color(0x3a3530) },
-        uSnowColor: { value: new THREE.Color(0xeef0f5) },
+        uRockColor: { value: new THREE.Color(0x5a5a5a) },
+        uSnowColor: { value: new THREE.Color(0xffffff) },
         uLightDir: { value: new THREE.Vector3(0.4, 0.7, 0.5).normalize() },
       },
       vertexShader: `
@@ -198,8 +246,8 @@ const MountainTerrain = () => {
           // Lighting
           vec3 normal = normalize(vNormal);
           float diffuse = max(dot(normal, uLightDir), 0.0);
-          float ambient = 0.25;
-          float lighting = ambient + diffuse * 0.75;
+          float ambient = 0.38;
+          float lighting = ambient + diffuse * 0.82;
           
           // Snow based on height and slope
           float slope = 1.0 - abs(normal.y);
@@ -212,8 +260,8 @@ const MountainTerrain = () => {
           vec3 color = mix(rockShade, uSnowColor, snowFactor);
           color *= lighting;
           
-          // Add subtle blue tint to shadows
-          color = mix(color, color * vec3(0.7, 0.8, 1.0), (1.0 - lighting) * 0.3);
+          // Neutral shadow lift keeps the mountain strictly monochrome.
+          color = mix(color, color * vec3(0.96), (1.0 - lighting) * 0.2);
           
           // Distance fog
           float depth = gl_FragCoord.z / gl_FragCoord.w;
@@ -222,7 +270,7 @@ const MountainTerrain = () => {
           
           // Atmospheric haze at distance
           float haze = smoothstep(50.0, 120.0, length(vPosition.xy));
-          color = mix(color, uFogColor + vec3(0.02), haze * 0.6);
+          color = mix(color, uFogColor + vec3(0.045), haze * 0.35);
           
           gl_FragColor = vec4(color, 1.0);
         }
@@ -247,7 +295,7 @@ const AtmosphericParticles = () => {
   const particlesRef = useRef<THREE.Points>(null);
   
   const { positions, velocities } = useMemo(() => {
-    const count = 3000;
+    const count = ATMOSPHERE_PARTICLE_COUNT;
     const positions = new Float32Array(count * 3);
     const velocities = new Float32Array(count * 3);
     
@@ -310,7 +358,7 @@ const FogLayers = () => {
   
   const layers = useMemo(() => {
     const result = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < FOG_LAYER_COUNT; i++) {
       result.push({
         y: -10 + i * 4,
         scale: 80 + i * 20,
@@ -356,7 +404,7 @@ const DistantMountains = () => {
     for (let ring = 0; ring < 3; ring++) {
       const distance = 80 + ring * 30;
       const height = 15 + ring * 8;
-      const segments = 128;
+      const segments = DISTANT_MOUNTAIN_SEGMENTS;
       
       const shape = new THREE.Shape();
       const angleStep = (Math.PI * 2) / segments;
@@ -418,7 +466,7 @@ const Birds = () => {
   
   const birdData = useMemo(() => {
     const birds = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < BIRD_COUNT; i++) {
       const angle = Math.random() * Math.PI * 2;
       const radius = 30 + Math.random() * 40;
       birds.push({
@@ -482,66 +530,52 @@ const Birds = () => {
 
 // Drone camera controller with scroll-based animation
 interface CameraControllerProps {
-  scrollProgress: number;
+  scrollProgress: React.MutableRefObject<number>;
+  isActive: boolean;
 }
 
-const CameraController: React.FC<CameraControllerProps> = ({ scrollProgress }) => {
-  const { camera } = useThree();
-  const targetRef = useRef({ x: 0, y: 10, z: 100, lookX: 0, lookY: 30, lookZ: 0 });
+const CameraController: React.FC<CameraControllerProps> = ({
+  scrollProgress,
+  isActive,
+}) => {
+  const { camera, invalidate } = useThree();
+  const targetRef = useRef(getCameraPose(0));
+  const lookAtRef = useRef(new THREE.Vector3(0, 28, 0));
 
   useEffect(() => {
+    const progress = Math.max(0, Math.min(1, scrollProgress.current));
+    const pose = getCameraPose(progress);
+    targetRef.current = pose;
+    camera.position.set(pose.x, pose.y, pose.z);
+    lookAtRef.current.set(pose.lookX, pose.lookY, pose.lookZ);
+    camera.lookAt(lookAtRef.current);
+    invalidate();
+  }, [camera, invalidate, scrollProgress]);
+
+  useFrame(() => {
+    if (!isActive) return;
+
     // Camera climbs the mountain as user scrolls
     // Start: Far back at base, full mountain silhouette visible
     // Middle: Ascending the mountain face, getting close
     // End: Arriving at the summit, looking out
 
-    const progress = Math.max(0, Math.min(1, scrollProgress));
+    const progress = Math.max(0, Math.min(1, scrollProgress.current));
+    targetRef.current = getCameraPose(progress);
 
-    let x, y, z, lookY;
-
-    if (progress < 0.3) {
-      // Base camp — full mountain visible, camera low and far
-      const t = progress / 0.3;
-      x = THREE.MathUtils.lerp(0, 10, t);
-      y = THREE.MathUtils.lerp(10, 15, t);
-      z = THREE.MathUtils.lerp(100, 70, t);
-      lookY = THREE.MathUtils.lerp(30, 35, t);
-    } else if (progress < 0.7) {
-      // Ascending — camera rises toward snow line and closer
-      const t = (progress - 0.3) / 0.4;
-      const angle = THREE.MathUtils.lerp(0.2, -0.1, t);
-      const radius = THREE.MathUtils.lerp(70, 25, t);
-      x = Math.sin(angle) * radius;
-      y = THREE.MathUtils.lerp(15, 45, t);
-      z = Math.cos(angle) * radius;
-      lookY = THREE.MathUtils.lerp(35, 50, t);
-    } else {
-      // Summit — near the peak, looking out at the world
-      const t = (progress - 0.7) / 0.3;
-      const easeT = 1 - Math.pow(1 - t, 3);
-      x = THREE.MathUtils.lerp(-3, 3, easeT);
-      y = THREE.MathUtils.lerp(45, 62, easeT);
-      z = THREE.MathUtils.lerp(25, 10, easeT);
-      lookY = THREE.MathUtils.lerp(50, 55, easeT);
-    }
-    
-    targetRef.current = { x, y, z, lookX: 0, lookY, lookZ: 0 };
-  }, [scrollProgress]);
-
-  useFrame(() => {
     // Smooth camera movement with variable smoothing
-    const smoothing = scrollProgress > 0.7 ? 0.03 : 0.05;
+    const smoothing = progress > 0.7 ? 0.03 : 0.05;
     camera.position.x += (targetRef.current.x - camera.position.x) * smoothing;
     camera.position.y += (targetRef.current.y - camera.position.y) * smoothing;
     camera.position.z += (targetRef.current.z - camera.position.z) * smoothing;
     
     // Look at the peak
-    const lookAtPoint = new THREE.Vector3(
-      targetRef.current.lookX, 
-      targetRef.current.lookY, 
-      targetRef.current.lookZ
+    lookAtRef.current.set(
+      targetRef.current.lookX,
+      targetRef.current.lookY,
+      targetRef.current.lookZ,
     );
-    camera.lookAt(lookAtPoint);
+    camera.lookAt(lookAtRef.current);
   });
 
   return null;
@@ -552,7 +586,7 @@ const Stars = () => {
   const starsRef = useRef<THREE.Points>(null);
   
   const positions = useMemo(() => {
-    const count = 2000;
+    const count = STAR_COUNT;
     const positions = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
@@ -595,23 +629,37 @@ const Stars = () => {
 
 // Main Mountain Scene Component
 interface MountainSceneProps {
-  scrollProgress: number;
+  scrollProgress: React.MutableRefObject<number>;
+  isActive: boolean;
 }
 
-const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
+const MountainCanvas: React.FC<MountainSceneProps> = ({
+  scrollProgress,
+  isActive,
+}) => {
   return (
     <Canvas
-      camera={{ position: [0, 10, 100], fov: 55, near: 0.1, far: 1000 }}
-      dpr={[1, 2]}
-      gl={{ antialias: true, alpha: false }}
+      camera={{ position: [0, 18, 145], fov: 55, near: 0.1, far: 1000 }}
+      dpr={[1, 1.25]}
+      frameloop={isActive ? "always" : "demand"}
+      gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
+      style={{ width: "100%", height: "100%" }}
     >
       <color attach="background" args={['#000000']} />
-      <fog attach="fog" args={['#000000', 60, 200]} />
+      <fog attach="fog" args={['#000000', 90, 260]} />
       
       {/* Lighting */}
-      <ambientLight intensity={0.1} />
-      <directionalLight position={[50, 100, 30]} intensity={0.8} color="#ffffff" />
-      <directionalLight position={[-30, 50, -20]} intensity={0.3} color="#4466aa" />
+      <ambientLight intensity={0.24} />
+      <directionalLight
+        position={[50, 100, 30]}
+        intensity={1.05}
+        color="#ffffff"
+      />
+      <directionalLight
+        position={[-30, 50, -20]}
+        intensity={0.45}
+        color="#9a9a9a"
+      />
       
       {/* Scene elements */}
       <MountainTerrain />
@@ -622,7 +670,7 @@ const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
       <Stars />
       
       {/* Camera controller */}
-      <CameraController scrollProgress={scrollProgress} />
+      <CameraController scrollProgress={scrollProgress} isActive={isActive} />
     </Canvas>
   );
 };
@@ -631,8 +679,29 @@ const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
 const MountainSection: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollProgressRef = useRef(0);
+  const lastPaintedProgressRef = useRef(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [shouldRenderCanvas, setShouldRenderCanvas] = useState(false);
+  const [isCanvasActive, setIsCanvasActive] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setShouldRenderCanvas(true);
+        observer.disconnect();
+      },
+      { rootMargin: "800px 0px" },
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -646,9 +715,27 @@ const MountainSection: React.FC = () => {
         pin: true,
         scrub: 1,
         onUpdate: (self) => {
-          setScrollProgress(self.progress);
+          scrollProgressRef.current = self.progress;
+          if (
+            Math.abs(self.progress - lastPaintedProgressRef.current) > 0.01 ||
+            self.progress === 0 ||
+            self.progress === 1
+          ) {
+            lastPaintedProgressRef.current = self.progress;
+            setDisplayProgress(self.progress);
+          }
         },
-        onEnter: () => setIsVisible(true),
+        onEnter: () => {
+          setShouldRenderCanvas(true);
+          setIsCanvasActive(true);
+          setIsVisible(true);
+        },
+        onEnterBack: () => {
+          setShouldRenderCanvas(true);
+          setIsCanvasActive(true);
+        },
+        onLeave: () => setIsCanvasActive(false),
+        onLeaveBack: () => setIsCanvasActive(false),
       });
 
       // Header animation
@@ -688,12 +775,17 @@ const MountainSection: React.FC = () => {
   return (
     <section ref={containerRef} id="journey" className="mountain-section">
       <div className="mountain-canvas-container">
-        <MountainCanvas scrollProgress={scrollProgress} />
+        {shouldRenderCanvas && (
+          <MountainCanvas
+            scrollProgress={scrollProgressRef}
+            isActive={isCanvasActive}
+          />
+        )}
       </div>
 
       <div ref={headerRef} className={`mountain-header ${isVisible ? 'is-visible' : ''}`}>
         <div className="header-label">
-          <span className="label-index">03</span>
+          <span className="label-index">02</span>
           <span className="label-line"></span>
           <span className="label-text">Adventure</span>
         </div>
@@ -713,29 +805,29 @@ const MountainSection: React.FC = () => {
 
       <div className="scroll-indicator">
         <div className="altitude-display">
-          <span className="altitude-label">Altitude</span>
-          <span className="altitude-value">
-            {Math.floor(THREE.MathUtils.lerp(1200, 8848, scrollProgress))}m
-          </span>
-        </div>
-        <div className="progress-bar">
-          <div 
-            className="progress-fill" 
-            style={{ transform: `scaleY(${scrollProgress})` }}
-          />
-        </div>
-      </div>
+	          <span className="altitude-label">Altitude</span>
+	          <span className="altitude-value">
+	            {Math.floor(THREE.MathUtils.lerp(1200, 8848, displayProgress))}m
+	          </span>
+	        </div>
+	        <div className="progress-bar">
+	          <div 
+	            className="progress-fill" 
+	            style={{ transform: `scaleY(${displayProgress})` }}
+	          />
+	        </div>
+	      </div>
 
-      <div className="journey-markers">
-        <div className={`marker ${scrollProgress > 0.2 ? 'active' : ''}`}>
-          <span className="marker-label">Base Camp</span>
-        </div>
-        <div className={`marker ${scrollProgress > 0.5 ? 'active' : ''}`}>
-          <span className="marker-label">High Camp</span>
-        </div>
-        <div className={`marker ${scrollProgress > 0.8 ? 'active' : ''}`}>
-          <span className="marker-label">Summit</span>
-        </div>
+	      <div className="journey-markers">
+	        <div className={`marker ${displayProgress > 0.2 ? 'active' : ''}`}>
+	          <span className="marker-label">Base Camp</span>
+	        </div>
+	        <div className={`marker ${displayProgress > 0.5 ? 'active' : ''}`}>
+	          <span className="marker-label">High Camp</span>
+	        </div>
+	        <div className={`marker ${displayProgress > 0.8 ? 'active' : ''}`}>
+	          <span className="marker-label">Summit</span>
+	        </div>
       </div>
 
       <style jsx>{`

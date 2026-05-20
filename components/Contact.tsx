@@ -136,59 +136,18 @@ const Contact = () => {
     return () => ctx.revert();
   }, [isVisible]);
 
-  // ── Magnetic button effect for email CTA ──
-  useEffect(() => {
+  const onEmailMove = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
     const btn = emailBtnRef.current;
     if (!btn) return;
 
-    const magnetStrength = 0.35;
-    const magnetRadius = 120; // px radius of magnetic pull
+    const rect = btn.getBoundingClientRect();
+    const distX = e.clientX - (rect.left + rect.width / 2);
+    const distY = e.clientY - (rect.top + rect.height / 2);
 
-    const onMouseMove = (e: MouseEvent) => {
-      const rect = btn.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      const distX = e.clientX - centerX;
-      const distY = e.clientY - centerY;
-      const distance = Math.sqrt(distX * distX + distY * distY);
-
-      if (distance < magnetRadius) {
-        const pullX = distX * magnetStrength;
-        const pullY = distY * magnetStrength;
-
-        gsap.to(btn, {
-          x: pullX,
-          y: pullY,
-          duration: 0.25,
-          ease: "power2.out",
-        });
-      } else {
-        gsap.to(btn, {
-          x: 0,
-          y: 0,
-          duration: 0.4,
-          ease: "elastic.out(1, 0.4)",
-        });
-      }
-    };
-
-    const onMouseLeave = () => {
-      gsap.to(btn, {
-        x: 0,
-        y: 0,
-        duration: 0.4,
-        ease: "elastic.out(1, 0.4)",
-      });
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    btn.addEventListener("mouseleave", onMouseLeave);
-
-    return () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      btn.removeEventListener("mouseleave", onMouseLeave);
-    };
+    gsap.set(btn, {
+      x: distX * 0.18,
+      y: distY * 0.18,
+    });
   }, []);
 
   // ── Email button hover shimmer ──
@@ -225,6 +184,13 @@ const Contact = () => {
   const onEmailLeave = useCallback(() => {
     const btn = emailBtnRef.current;
     if (!btn) return;
+
+    gsap.to(btn, {
+      x: 0,
+      y: 0,
+      duration: 0.35,
+      ease: "elastic.out(1, 0.45)",
+    });
 
     const arrow = btn.querySelector(".email-arrow");
     if (arrow) {
@@ -310,6 +276,7 @@ const Contact = () => {
               href="mailto:hello@saikiranreddy.com"
               className="email-link interactive"
               onMouseEnter={onEmailEnter}
+              onMouseMove={onEmailMove}
               onMouseLeave={onEmailLeave}
             >
               <span className="email-shimmer"></span>
@@ -693,6 +660,11 @@ const Contact = () => {
         @media (max-width: 768px) {
           .contact-container {
             padding: 6rem 2rem 2rem;
+          }
+
+          .contact-light-motif {
+            width: min(600px, calc(100vw - 2rem));
+            height: 320px;
           }
 
           .contact-headline {

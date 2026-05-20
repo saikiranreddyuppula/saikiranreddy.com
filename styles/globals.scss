@@ -16,7 +16,7 @@
   
   // Typography
   --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-mono: 'Space Mono', 'SF Mono', 'Monaco', 'Consolas', monospace;
   
   // Grid
@@ -49,7 +49,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
-  cursor: none;
 }
 
 // Subtle grain texture
@@ -72,6 +71,11 @@ a {
 ::selection {
   background: var(--accent);
   color: var(--bg-primary);
+}
+
+:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 4px;
 }
 
 // Custom Scrollbar
@@ -156,7 +160,9 @@ a {
 
 // Interactive elements
 .interactive {
-  cursor: none;
+  @media (pointer: fine) {
+    cursor: none;
+  }
 }
 
 // Animations

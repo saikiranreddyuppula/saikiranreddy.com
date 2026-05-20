@@ -37,7 +37,7 @@ const GridLines = () => {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
         const material = new THREE.LineBasicMaterial({ 
-          color: '#c9a962', 
+          color: '#ffffff', 
           transparent: true, 
           opacity: 0.03 + Math.random() * 0.02 
         });
@@ -88,7 +88,7 @@ const Particles = () => {
       </bufferGeometry>
       <pointsMaterial
         size={0.5}
-        color="#c9a962"
+        color="#ffffff"
         transparent
         opacity={0.4}
         sizeAttenuation
@@ -113,7 +113,7 @@ const AccentGeometry = () => {
     <mesh ref={meshRef} position={[15, 5, -15]}>
       <icosahedronGeometry args={[3, 1]} />
       <meshBasicMaterial 
-        color="#c9a962" 
+        color="#ffffff" 
         wireframe 
         transparent 
         opacity={0.15}
@@ -136,7 +136,7 @@ const LightRing = () => {
   return (
     <mesh ref={ringRef} position={[0, 0, -10]}>
       <torusGeometry args={[20, 0.02, 16, 100]} />
-      <meshBasicMaterial color="#c9a962" transparent opacity={0.1} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0.1} />
     </mesh>
   );
 };
@@ -159,7 +159,7 @@ const Scene = () => {
         camera={{ position: [0, 0, 30], fov: 50 }}
         dpr={[1, 1.5]}
       >
-        <fog attach="fog" args={['#0a0a08', 20, 60]} />
+        <fog attach="fog" args={['#0a0a0a', 20, 60]} />
         <GridLines />
         <Particles />
         <AccentGeometry />

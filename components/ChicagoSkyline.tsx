@@ -13,7 +13,6 @@ interface WindowLight {
 
 const ChicagoSkyline: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const lightsRef = useRef<HTMLDivElement>(null);
 
   const path = `M2558.306,432.849c-1.313-0.187-2.813-0.88-3.91-0.478c-6.897,2.53-9.018-3.717-8.671-6.956
 	c0.591-5.515-0.589-10.939,0.317-16.294c0.316-1.867,0.161-3.643-1.399-3.749c-7.012-0.475-13.874-3.731-20.837-2.393
@@ -172,40 +171,6 @@ const ChicagoSkyline: React.FC = () => {
     return () => ctx.revert();
   }, []);
 
-  // Twinkling lights animation via refs
-  useEffect(() => {
-    if (!lightsRef.current) return;
-
-    const lightEls = lightsRef.current.children;
-    if (lightEls.length === 0) return;
-
-    const tweens: gsap.core.Tween[] = [];
-
-    for (let i = 0; i < lightEls.length; i++) {
-      const el = lightEls[i] as HTMLElement;
-      const data = windowLights[i];
-      if (!data) continue;
-
-      const tween = gsap.fromTo(
-        el,
-        { opacity: 0 },
-        {
-          opacity: () => 0.2 + Math.random() * 0.4,
-          duration: data.duration,
-          delay: data.delay,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        }
-      );
-      tweens.push(tween);
-    }
-
-    return () => {
-      tweens.forEach((t) => t.kill());
-    };
-  }, [windowLights]);
-
   return (
     <div className="chicago-skyline-wrapper" ref={wrapperRef}>
       <svg
@@ -272,7 +237,7 @@ const ChicagoSkyline: React.FC = () => {
       </svg>
 
       {/* Window lights as HTML elements overlaying the SVG */}
-      <div className="window-lights-layer" ref={lightsRef}>
+      <div className="window-lights-layer">
         {windowLights.map((light, i) => (
           <div
             key={i}
@@ -280,6 +245,8 @@ const ChicagoSkyline: React.FC = () => {
             style={{
               left: light.left,
               bottom: light.bottom,
+              animationDelay: `${light.delay}s`,
+              animationDuration: `${light.duration}s`,
             }}
           />
         ))}
@@ -319,6 +286,16 @@ const ChicagoSkyline: React.FC = () => {
           border-radius: 0.5px;
           box-shadow: 0 0 3px 1px rgba(255, 255, 255, 0.3);
           opacity: 0;
+          animation-name: windowLightTwinkle;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+          animation-direction: alternate;
+        }
+
+        @keyframes windowLightTwinkle {
+          to {
+            opacity: 0.5;
+          }
         }
 
         @media (max-width: 768px) {

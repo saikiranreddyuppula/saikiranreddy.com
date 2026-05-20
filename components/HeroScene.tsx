@@ -5,10 +5,11 @@ import { THREAD_LENGTH_END, THREAD_ORIGIN } from "../constants";
 
 interface ScrollRef {
   scrollProgress?: React.MutableRefObject<number>;
+  active?: boolean;
 }
 
-const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
-  const count = 250;
+const ThreadTunnel = ({ scrollProgress, active = true }: ScrollRef) => {
+  const count = 160;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
@@ -41,7 +42,7 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   }, []);
 
   const geometry = useMemo(() => {
-    const geo = new THREE.CylinderGeometry(1, 1, 1, 5, 40);
+    const geo = new THREE.CylinderGeometry(1, 1, 1, 4, 24);
     geo.setAttribute("aData1", new THREE.InstancedBufferAttribute(data1, 4));
     geo.setAttribute("aData2", new THREE.InstancedBufferAttribute(data2, 4));
     return geo;
@@ -58,6 +59,7 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   }, []);
 
   useFrame((state) => {
+    if (!active) return;
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       materialRef.current.uniforms.uScrollProgress.value =
@@ -162,10 +164,11 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   );
 };
 
-const BackgroundWeb = () => {
+const BackgroundWeb = ({ active = true }: { active?: boolean }) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
   useFrame((state) => {
+    if (!active) return;
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
     }
@@ -200,7 +203,7 @@ const BackgroundWeb = () => {
             float web = 0.0;
             float t = uTime * 0.5;
             
-            for(float i = 0.0; i < 35.0; i++) {
+            for(float i = 0.0; i < 18.0; i++) {
               float ang = hash11(i * 1.34) * 3.14159;
               vec2 n = vec2(cos(ang), sin(ang));
               float d = abs(dot(uv, n));
@@ -229,10 +232,11 @@ const BackgroundWeb = () => {
   );
 };
 
-const CenterGlow = ({ scrollProgress }: ScrollRef) => {
+const CenterGlow = ({ scrollProgress, active = true }: ScrollRef) => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
   useFrame((state) => {
+    if (!active) return;
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
       materialRef.current.uniforms.uScrollProgress.value =
@@ -279,12 +283,14 @@ const CenterGlow = ({ scrollProgress }: ScrollRef) => {
   );
 };
 
-const CameraController = ({ scrollProgress }: ScrollRef) => {
+const CameraController = ({ scrollProgress, active = true }: ScrollRef) => {
   const { camera } = useThree();
   const mouseRef = useRef({ x: 0, y: 0 });
   const smoothRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
+    if (!active) return;
+
     const orientationZero = { beta: 0, gamma: 0 };
     let hasOrientationZero = false;
     let orientationEnabled = false;
@@ -369,7 +375,6 @@ const CameraController = ({ scrollProgress }: ScrollRef) => {
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
     window.addEventListener("touchstart", handleFirstTouch, { passive: true });
-    void requestOrientationPermission();
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
@@ -381,9 +386,10 @@ const CameraController = ({ scrollProgress }: ScrollRef) => {
         true,
       );
     };
-  }, []);
+  }, [active]);
 
   useFrame((state) => {
+    if (!active) return;
     const p = scrollProgress?.current ?? 0;
     const easedP = p * p;
     const t = state.clock.elapsedTime;
@@ -411,22 +417,24 @@ const CameraController = ({ scrollProgress }: ScrollRef) => {
 
 interface HeroSceneProps {
   scrollProgress?: React.MutableRefObject<number>;
+  active?: boolean;
 }
 
-const HeroScene = ({ scrollProgress }: HeroSceneProps) => {
+const HeroScene = ({ scrollProgress, active = true }: HeroSceneProps) => {
   return (
     <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
       <Canvas
         camera={{ position: [0, 0, 8], fov: 45 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true, alpha: true }}
+        dpr={[1, 1.25]}
+        frameloop={active ? "always" : "demand"}
+        gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
       >
         <color attach="background" args={["#030303"]} />
         <fog attach="fog" args={["#030303", 20, 60]} />
-        <BackgroundWeb />
-        <ThreadTunnel scrollProgress={scrollProgress} />
-        <CenterGlow scrollProgress={scrollProgress} />
-        <CameraController scrollProgress={scrollProgress} />
+        <BackgroundWeb active={active} />
+        <ThreadTunnel scrollProgress={scrollProgress} active={active} />
+        <CenterGlow scrollProgress={scrollProgress} active={active} />
+        <CameraController scrollProgress={scrollProgress} active={active} />
       </Canvas>
     </div>
   );

@@ -3,12 +3,7 @@ import { ReactLenis, useLenis } from "lenis/react";
 import { useEffect, useRef, useLayoutEffect, useMemo } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
-import {
-  SCROLL_STEP,
-  SCROLL_COOLDOWN,
-  SCROLL_LERP,
-  SCROLL_DURATION,
-} from "../constants";
+import { SCROLL_LERP, SCROLL_DURATION } from "../constants";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,7 +22,6 @@ const ScrollTriggerUpdater = () => {
 
 const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
   const lenisRef = useRef<any>(null);
-  const lastScrollTimeRef = useRef(0);
 
   useLayoutEffect(() => {
     // Sync GSAP ticker with Lenis
@@ -68,16 +62,27 @@ const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       e.preventDefault();
 
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < SCROLL_COOLDOWN) return;
-      lastScrollTimeRef.current = now;
-
       const lenis = lenisRef.current?.lenis;
-      if (!lenis) return;
-      lenis.scrollTo(lenis.targetScroll + direction * SCROLL_STEP, {
-        programmatic: false,
-        lerp: SCROLL_LERP,
-        duration: SCROLL_DURATION,
+      const viewportStep = Math.round(window.innerHeight * 0.82);
+      const target =
+        e.key === "Home"
+          ? 0
+          : e.key === "End"
+            ? document.documentElement.scrollHeight
+            : window.scrollY + direction * viewportStep;
+
+      if (lenis) {
+        lenis.scrollTo(target, {
+          force: true,
+          duration: SCROLL_DURATION,
+          easing: (t: number) => 1 - Math.pow(1 - t, 4),
+        });
+        return;
+      }
+
+      window.scrollTo({
+        top: target,
+        behavior: "smooth",
       });
     };
 
@@ -85,49 +90,55 @@ const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // Lenis options with virtualScroll callback that intercepts and normalizes
-  // wheel events. Returning false from this function prevents Lenis from
-  // processing the scroll, so we handle it ourselves with a fixed delta.
+  useEffect(() => {
+    const scrollToSection = (event: Event) => {
+      const detail = (event as CustomEvent<{ id?: string; immediate?: boolean }>).detail;
+      const id = detail?.id;
+      if (!id) return;
+
+      const target = id === "hero" ? null : document.getElementById(id);
+      if (id !== "hero" && !target) return;
+
+      ScrollTrigger.refresh();
+
+      window.requestAnimationFrame(() => {
+        const lenis = lenisRef.current?.lenis;
+        const top =
+          id === "hero"
+            ? 0
+            : Math.max(0, window.scrollY + target!.getBoundingClientRect().top);
+
+        if (lenis) {
+          lenis.scrollTo(top, {
+            immediate: Boolean(detail?.immediate),
+            force: true,
+            duration: detail?.immediate ? undefined : 1,
+            easing: (t: number) => 1 - Math.pow(1 - t, 4),
+          });
+          return;
+        }
+
+        window.scrollTo({
+          top,
+          behavior: detail?.immediate ? "instant" as ScrollBehavior : "smooth",
+        });
+      });
+    };
+
+    window.addEventListener("portfolio:scroll-to", scrollToSection);
+    return () => window.removeEventListener("portfolio:scroll-to", scrollToSection);
+  }, []);
+
   const lenisOptions = useMemo(
     () => ({
       lerp: SCROLL_LERP,
       duration: SCROLL_DURATION,
+      easing: (t: number) => 1 - Math.pow(1 - t, 4),
       smoothWheel: true,
-      syncTouch: true,
+      wheelMultiplier: 0.82,
+      touchMultiplier: 1.2,
+      syncTouch: false,
       autoRaf: false,
-      virtualScroll: (data: {
-        deltaX: number;
-        deltaY: number;
-        event: WheelEvent | TouchEvent;
-      }) => {
-        const { event, deltaY } = data;
-
-        // Let touch events through to Lenis normally
-        if (!event.type.includes("wheel")) return true;
-
-        // Prevent native browser scroll
-        if (event.cancelable) event.preventDefault();
-
-        // Throttle: skip if within cooldown window
-        const now = Date.now();
-        if (now - lastScrollTimeRef.current < SCROLL_COOLDOWN) return false;
-        lastScrollTimeRef.current = now;
-
-        const direction = Math.sign(deltaY);
-        if (direction === 0) return false;
-
-        // Scroll by fixed amount instead of raw delta
-        const lenis = lenisRef.current?.lenis;
-        if (lenis) {
-          lenis.scrollTo(lenis.targetScroll + direction * SCROLL_STEP, {
-            programmatic: false,
-            lerp: SCROLL_LERP,
-            duration: SCROLL_DURATION,
-          });
-        }
-
-        return false; // Block Lenis default wheel handling
-      },
     }),
     []
   );
