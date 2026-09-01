@@ -6,23 +6,13 @@ export const profile = {
   location: "Greater Chicago Area",
   email: "hello@saikiranreddy.com",
   headline:
-    "I architect systems that turn operational complexity into something a team can actually run.",
+    "I design the systems — cloud, platform, and product — that teams can actually run.",
   manifesto:
-    "I don't just write code — I build the systems that make everything else possible.",
+    "Architecture, delivery, and the interfaces between them.",
   about: [
-    "Solutions Architect at Hertz, based in the Greater Chicago Area. I spend most of my time on platforms that have to work at fleet scale — availability, cost, and the messy reality of production.",
-    "Before that I designed and shipped products across hospitality, healthcare, ecommerce, and security: booking engines, clinical workflows, payments, and internal platforms used by operators every day.",
-    "I think in systems. Not frameworks — the contracts between services, the failure modes, and the path from a prototype to something that stays up.",
+    "Solutions Architect at Hertz. I shape platforms that have to stay up: services, events, cost, and the path from a prototype to production.",
+    "The work is the stack — cloud architecture, platform engineering, APIs, and AI that survives contact with real traffic.",
   ],
-  stats: [
-    { value: 8, suffix: "+", label: "Years of\nEngineering" },
-    { value: 50, suffix: "+", label: "Projects\nShipped" },
-    { value: 12, suffix: "", label: "Industries\nServed" },
-  ],
-  education: {
-    school: "Lovely Professional University",
-    note: "3rd prize, graduation project expo — April 2019",
-  },
   socials: [
     {
       name: "LinkedIn",
@@ -33,58 +23,94 @@ export const profile = {
   ],
 };
 
-export const capabilities = [
-  "Cloud architecture",
-  "Platform engineering",
-  "Microservices",
-  "DevOps & CI/CD",
-  "Event-driven systems",
-  "Generative AI",
-  "Performance",
-  "Security",
+export const skillGroups = [
+  {
+    name: "Architecture",
+    hint: "How the system is shaped",
+    items: [
+      "Cloud architecture",
+      "Platform engineering",
+      "Microservices",
+      "Event-driven systems",
+      "API contracts",
+      "Resilience",
+    ],
+  },
+  {
+    name: "Delivery",
+    hint: "How it ships and stays up",
+    items: [
+      "DevOps & CI/CD",
+      "Observability",
+      "Performance",
+      "Security",
+      "Cost control",
+      "Incident paths",
+    ],
+  },
+  {
+    name: "Build",
+    hint: "What I reach for",
+    items: [
+      "TypeScript",
+      "Next.js",
+      "Node",
+      "Generative AI",
+      "Web Audio",
+      "Realtime UIs",
+    ],
+  },
+  {
+    name: "Domains",
+    hint: "Where the stack has lived",
+    items: [
+      "Fleet & hospitality",
+      "Payments",
+      "Healthcare workflows",
+      "Zero-trust",
+      "Ecommerce",
+      "IoT / supply chain",
+    ],
+  },
 ];
+
+export const capabilities = skillGroups.flatMap((group) => group.items);
 
 export const industries = [
   {
     name: "Hospitality",
     number: "01",
-    description:
-      "Fleet and guest platforms at Hertz scale — booking, operations, and systems that have to stay up when demand spikes.",
+    description: "Booking, fleet ops, and guest platforms that hold when demand spikes.",
     tags: ["Fleet ops", "Booking", "PMS"],
   },
   {
     name: "Ecommerce",
     number: "02",
-    description:
-      "Payment flows, inventory, and checkout paths designed for real traffic, not demo-day volume.",
-    tags: ["Payments", "Inventory", "Microservices"],
+    description: "Checkout, inventory, and payment paths built for real traffic.",
+    tags: ["Payments", "Inventory", "APIs"],
   },
   {
     name: "Healthcare",
     number: "03",
-    description:
-      "HIPAA-aware patient systems, clinical workflows, and the unglamorous work of keeping records trustworthy.",
+    description: "Clinical workflows and records that have to stay trustworthy.",
     tags: ["HIPAA", "EHR", "Workflows"],
   },
   {
     name: "Cyber Security",
     number: "04",
-    description:
-      "Zero-trust patterns, threat-aware platforms, and the controls that let the rest of the stack ship safely.",
+    description: "Zero-trust patterns and the controls that let the rest of the stack ship.",
     tags: ["Zero Trust", "Detection", "Compliance"],
   },
   {
     name: "Generative AI",
     number: "05",
-    description:
-      "AI features that survive contact with production: evaluation, cost, latency, and a clear owner when they fail.",
+    description: "Agents and pipelines with eval, cost, latency, and a clear owner.",
     tags: ["Pipelines", "Agents", "Eval"],
   },
   {
     name: "Manufacturing",
     number: "06",
-    description:
-      "IoT, supply-chain, and predictive maintenance — the systems that sit between the factory floor and the dashboard.",
+    description: "IoT and supply-chain systems between the floor and the dashboard.",
     tags: ["IoT", "Supply chain", "Predictive"],
   },
 ];
@@ -92,80 +118,63 @@ export const industries = [
 export const projects = [
   {
     name: "Open Utility Tools",
-    year: "2026",
     url: "https://www.openutilitytools.com/",
-    blurb:
-      "A public toolkit of fast, focused utilities. Built to be useful on the first visit — no account wall, no ceremony.",
+    blurb: "Fast public utilities. No account wall.",
     tags: ["TypeScript", "Next.js"],
   },
   {
     name: "Literature",
-    year: "2026",
     url: "https://literature-red.vercel.app",
-    blurb:
-      "A reading surface for long-form work. Quiet typography, fast navigation, nothing between the reader and the page.",
+    blurb: "A reading surface. Quiet type, fast pages.",
     tags: ["TypeScript", "Vercel"],
   },
   {
     name: "Internet Radio",
-    year: "2019",
     url: "https://github.com/saikiranreddyuppula/Internet-Radio-Angular-8",
-    blurb:
-      "Streaming radio built on Angular and Howler.js, with Firebase behind the catalog. Still one of the cleanest players I have shipped.",
+    blurb: "Streaming radio on Angular, Howler, Firebase.",
     tags: ["Angular", "Howler", "Firebase"],
   },
   {
     name: "Audio Visualizer",
-    year: "2021",
     url: "https://audio-visualizer.saikiranreddy.com/",
-    blurb:
-      "A visualizer that treats sound as architecture — frequency as form, silence as negative space.",
+    blurb: "Frequency as form. Sound as architecture.",
     tags: ["Web Audio", "Canvas"],
   },
   {
     name: "WayToSkill",
-    year: "2020",
     url: "https://waytoskill.vercel.app",
-    blurb:
-      "A learning platform experiment: structured paths, less noise, more practice.",
+    blurb: "Structured paths. Less noise, more practice.",
     tags: ["TypeScript"],
   },
   {
     name: "Vivid Technologies",
-    year: "2023",
     url: "https://vivid-technologies.vercel.app",
-    blurb:
-      "Product and platform work for a technology studio — the kind of site that has to explain a company in one scroll.",
+    blurb: "A studio site that has to explain itself in one scroll.",
     tags: ["JavaScript"],
   },
   {
     name: "World Stats Info",
-    year: "2020",
     url: "https://github.com/saikiranreddyuppula/worldstatsinfo",
-    blurb:
-      "A COVID-19 tracker shipped when the data was moving faster than the dashboards. Vue, public numbers, daily refresh.",
+    blurb: "Public numbers, daily refresh, Vue.",
     tags: ["Vue", "Data"],
   },
 ];
 
-export const journey = [
+export const systems = [
   {
-    stage: "Base Camp",
-    year: "2017 — 2019",
-    title: "Foundations",
-    body: "Lovely Professional University. Shipped early products, placed 3rd at the graduation project expo, and learned that shipping beats a perfect plan.",
+    name: "Platforms",
+    kicker: "Cloud & runtime",
+    body: "Services, events, and the failure modes between them. Architecture that stays boring in production.",
   },
   {
-    stage: "High Camp",
-    year: "2019 — 2023",
-    title: "Building in public",
-    body: "Platforms across healthcare, ecommerce, and internal ops — STS, Asthra, Pillbro, and a string of products that had to survive real users. Radio, visualizers, and the first cloud systems I still stand behind.",
+    name: "Interfaces",
+    kicker: "Contracts & APIs",
+    body: "The seams: REST, events, identity, payments. Clear contracts so teams can move without breaking the floor.",
   },
   {
-    stage: "Summit",
-    year: "2023 — now",
-    title: "Architecture at scale",
-    body: "Solutions Architect at Hertz. Fleet-scale platforms, cloud architecture, and the discipline of making systems boring in the best way — predictable, observable, and cheap enough to keep running.",
+    name: "Intelligence",
+    kicker: "AI in production",
+    body: "Generative features with evaluation, cost, and an owner when they fail — not a demo glued to a prompt.",
   },
 ];
 
@@ -173,6 +182,6 @@ export const nav = [
   { href: "/", label: "Home", id: "hero" },
   { href: "/about", label: "About", id: "about" },
   { href: "/work", label: "Work", id: "industries" },
-  { href: "/journey", label: "Journey", id: "journey" },
+  { href: "/journey", label: "Stack", id: "journey" },
   { href: "/contact", label: "Contact", id: "contact" },
 ];
