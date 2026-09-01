@@ -1,200 +1,76 @@
 import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+import { capabilities, profile } from "../lib/content";
+
 gsap.registerPlugin(ScrollTrigger);
 
-const MANIFESTO =
-  "I don\u2019t just write code \u2014 I build the systems that make everything else possible.";
-const WORDS = MANIFESTO.split(" ");
-
-const STATS = [
-  { value: 8, suffix: "+", label: "Years of\nEngineering" },
-  { value: 50, suffix: "+", label: "Projects\nShipped" },
-  { value: 12, suffix: "", label: "Industries\nServed" },
-];
-
-const MARQUEE =
-  "SYSTEMS \u00B7 ARCHITECTURE \u00B7 ENGINEERING \u00B7 SCALE \u00B7 PERFORMANCE \u00B7 INFRASTRUCTURE \u00B7 ";
-const MARQUEE_ALT =
-  "CLOUD \u00B7 MICROSERVICES \u00B7 DEVOPS \u00B7 AUTOMATION \u00B7 RESILIENCE \u00B7 OPTIMIZATION \u00B7 ";
-
 const About = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     let entranceTl: gsap.core.Timeline;
 
-    const handleReveal = () => {
-      containerRef.current!.style.visibility = "visible";
+    const reveal = () => {
+      if (!containerRef.current) return;
+      containerRef.current.style.visibility = "visible";
       entranceTl?.play();
-      gsap.delayedCall(0.2, () => ScrollTrigger.refresh());
+      gsap.delayedCall(0.15, () => ScrollTrigger.refresh());
     };
-    window.addEventListener("revealAbout", handleReveal);
 
-    // Fallback: if user lands mid-page
+    window.addEventListener("revealAbout", reveal);
+
     if (window.scrollY > window.innerHeight * 0.5) {
       containerRef.current.style.visibility = "visible";
-      gsap.delayedCall(0.1, () => {
-        entranceTl?.play();
-        ScrollTrigger.refresh();
-      });
+      gsap.delayedCall(0.08, reveal);
     }
 
     const ctx = gsap.context(() => {
-      // ═══════════════════════════════════════════════
-      // ENTRANCE ANIMATIONS (triggered by revealAbout)
-      // ═══════════════════════════════════════════════
       entranceTl = gsap.timeline({ paused: true });
 
-      entranceTl.fromTo(
-        ".about-label",
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" },
-      );
-
-      // ═══════════════════════════════════════════════
-      // WORD-BY-WORD SCROLL REVEAL — the hero effect
-      // ═══════════════════════════════════════════════
-      const words = gsap.utils.toArray<HTMLElement>(".manifesto-word");
-      gsap.set(words, { opacity: 0.08 });
-
-      const manifestoTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".manifesto-pin",
-          start: "top 15%",
-          end: "+=250%",
-          pin: true,
-          scrub: 0.5,
-          pinSpacing: true,
-        },
-      });
-
-      // Each word brightens sequentially
-      manifestoTl.to(
-        words,
-        {
-          opacity: 1,
-          stagger: { each: 0.06 },
-          duration: 1,
-          ease: "none",
-        },
-        0,
-      );
-
-      // Subtle cinematic zoom during reveal
-      manifestoTl.fromTo(
-        ".manifesto-text",
-        { scale: 0.97 },
-        { scale: 1, duration: 1, ease: "none" },
-        0,
-      );
-
-      // Hold at end before unpin
-      manifestoTl.to({}, { duration: 0.25 });
-
-      // ═══════════════════════════════════════════════
-      // MARQUEE — entrance on scroll
-      // ═══════════════════════════════════════════════
-      gsap.fromTo(
-        ".marquee-strip",
-        { opacity: 0 },
-        {
-          opacity: 1,
-          duration: 0.8,
-          scrollTrigger: {
-            trigger: ".marquee-strip",
-            start: "top 92%",
-            toggleActions: "play none none none",
-          },
-        },
-      );
-
-      // ═══════════════════════════════════════════════
-      // STATS — dramatic count-up with stagger
-      // ═══════════════════════════════════════════════
-      gsap.utils.toArray<HTMLElement>(".stat-col").forEach((col, i) => {
-        gsap.fromTo(
-          col,
-          { opacity: 0, y: 50 },
+      entranceTl
+        .fromTo(
+          ".ab-kicker",
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },
+        )
+        .fromTo(
+          ".ab-headline .line",
+          { yPercent: 110 },
+          { yPercent: 0, duration: 0.7, stagger: 0.08, ease: "power4.out" },
+          0.05,
+        )
+        .fromTo(
+          ".ab-rail, .ab-copy p, .ab-caps, .ab-meter",
+          { opacity: 0, y: 18 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.7,
-            delay: i * 0.15,
+            duration: 0.5,
+            stagger: 0.06,
             ease: "power3.out",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
           },
+          0.2,
         );
-      });
 
-      // Stat vertical dividers draw in
-      gsap.utils.toArray<HTMLElement>(".stat-divider").forEach((d, i) => {
+      gsap.utils.toArray<HTMLElement>(".ab-meter-fill").forEach((el) => {
         gsap.fromTo(
-          d,
-          { scaleY: 0 },
+          el,
+          { scaleX: 0 },
           {
-            scaleY: 1,
-            duration: 0.8,
-            delay: 0.1 + i * 0.12,
+            scaleX: 1,
+            duration: 1.1,
             ease: "power3.inOut",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
+            scrollTrigger: { trigger: el, start: "top 90%" },
           },
         );
       });
-
-      // Count-up numbers
-      gsap.utils.toArray<HTMLElement>(".stat-value").forEach((el) => {
-        const target = Number(el.dataset.value);
-        const suffix = el.dataset.suffix || "";
-        const proxy = { val: 0 };
-        gsap.to(proxy, {
-          val: target,
-          duration: 1.5,
-          ease: "power2.out",
-          onUpdate: () => {
-            el.textContent = Math.round(proxy.val) + suffix;
-          },
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        });
-      });
-
-      // ═══════════════════════════════════════════════
-      // TAGLINE — blur reveal
-      // ═══════════════════════════════════════════════
-      gsap.fromTo(
-        ".about-tagline",
-        { y: 25, opacity: 0, filter: "blur(10px)" },
-        {
-          y: 0,
-          opacity: 1,
-          filter: "blur(0px)",
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ".about-tagline",
-            start: "top 88%",
-            toggleActions: "play none none none",
-          },
-        },
-      );
     }, containerRef);
 
     return () => {
-      window.removeEventListener("revealAbout", handleReveal);
+      window.removeEventListener("revealAbout", reveal);
       ctx.revert();
     };
   }, []);
@@ -206,320 +82,267 @@ const About = () => {
       className="about-section"
       style={{ visibility: "hidden" }}
     >
-      <div className="about-container">
-        {/* ── Label ── */}
-        <div className="about-header">
-          <div className="about-label">
-            <span className="label-index">01</span>
-            <span className="label-line" />
-            <span className="label-text">About</span>
+      <div className="ab-shell">
+        <div className="ab-rail">
+          <div className="ab-kicker">
+            <span>01</span>
+            <i />
+            <span>Dossier</span>
           </div>
+          <dl>
+            <div>
+              <dt>Now</dt>
+              <dd>
+                {profile.title}
+                <em>{profile.company}</em>
+              </dd>
+            </div>
+            <div>
+              <dt>Station</dt>
+              <dd>{profile.location}</dd>
+            </div>
+            <div>
+              <dt>School</dt>
+              <dd>
+                {profile.education.school}
+                <em>{profile.education.note}</em>
+              </dd>
+            </div>
+          </dl>
         </div>
 
-        {/* ── Pinned Manifesto — word-by-word scroll reveal ── */}
-        <div className="manifesto-pin">
-          <div className="manifesto-text">
-            {WORDS.map((word, i) => (
-              <span
-                key={i}
-                className={`manifesto-word${word === "systems" ? " accent-word" : ""}`}
-              >
-                {word}{" "}
-              </span>
+        <div className="ab-main">
+          <h2 className="ab-headline">
+            <span>
+              <span className="line">I think in systems.</span>
+            </span>
+            <span>
+              <span className="line italic">Not frameworks — systems.</span>
+            </span>
+          </h2>
+
+          <div className="ab-copy">
+            {profile.about.map((para) => (
+              <p key={para}>{para}</p>
+            ))}
+          </div>
+
+          <ul className="ab-caps">
+            {capabilities.map((item, i) => (
+              <li key={item}>
+                <span>{String(i + 1).padStart(2, "0")}</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <div className="ab-meter">
+            {profile.stats.map((stat) => (
+              <div key={stat.label} className="ab-meter-row">
+                <div className="ab-meter-top">
+                  <b>
+                    {stat.value}
+                    {stat.suffix}
+                  </b>
+                  <span>{stat.label.replace("\n", " ")}</span>
+                </div>
+                <div className="ab-meter-track">
+                  <span
+                    className="ab-meter-fill"
+                    style={{
+                      width: `${Math.min(100, Number(stat.value) * (stat.value > 20 ? 1.6 : 8))}%`,
+                    }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
-
-        {/* ── Dual Marquee Strip ── */}
-        <div className="marquee-strip">
-          <div className="marquee-track marquee-forward">
-            <span className="marquee-content marquee-bold">{MARQUEE.repeat(4)}</span>
-            <span className="marquee-content marquee-bold" aria-hidden="true">
-              {MARQUEE.repeat(4)}
-            </span>
-          </div>
-          <div className="marquee-track marquee-reverse">
-            <span className="marquee-content">{MARQUEE_ALT.repeat(4)}</span>
-            <span className="marquee-content" aria-hidden="true">
-              {MARQUEE_ALT.repeat(4)}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Stats — oversized numbers with vertical dividers ── */}
-        <div className="about-stats-grid">
-          {STATS.map((stat, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <div className="stat-divider" />}
-              <div className="stat-col">
-                <span
-                  className="stat-value interactive"
-                  data-value={stat.value}
-                  data-suffix={stat.suffix}
-                >
-                  0
-                </span>
-                <span className="stat-label">{stat.label}</span>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* ── Tagline — blur reveal ── */}
-        <p className="about-tagline">
-          I think in systems. Not frameworks &mdash;{" "}
-          <em className="tagline-accent">systems.</em>
-        </p>
       </div>
 
       <style jsx>{`
-        /* ── Section ───────────────────────────────── */
         .about-section {
           position: relative;
           z-index: 2;
           background: #000;
-          overflow: hidden;
+          color: #fff;
+          padding: 8rem 0 7rem;
         }
 
-        .about-container {
-          max-width: 1300px;
-          width: 100%;
+        .ab-shell {
+          width: min(1280px, calc(100% - 5rem));
           margin: 0 auto;
-          padding: 8rem 4rem;
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          gap: 5rem;
         }
 
-        /* ── Label ─────────────────────────────────── */
-        .about-header {
-          margin-bottom: 0;
+        .ab-rail {
+          position: sticky;
+          top: 6rem;
+          align-self: start;
         }
 
-        .about-label {
+        .ab-kicker {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
-          opacity: 0;
+          gap: 1rem;
           margin-bottom: 2.5rem;
-        }
-
-        .label-index {
           font-family: var(--font-mono);
-          font-size: 0.7rem;
-          color: #fff;
-          letter-spacing: 0.1em;
-        }
-
-        .label-line {
-          width: 40px;
-          height: 1px;
-          background: rgba(255, 255, 255, 0.3);
-        }
-
-        .label-text {
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
+          font-size: 0.68rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.5);
+          color: rgba(255, 255, 255, 0.42);
         }
 
-        /* ── Manifesto — pinned scroll zone ────────── */
-        .manifesto-pin {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
+        .ab-kicker i {
+          width: 36px;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.28);
         }
 
-        .manifesto-text {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(3.2rem, 7vw, 6rem);
-          font-weight: 300;
-          line-height: 1.25;
-          color: #fff;
-          max-width: 1000px;
-          will-change: transform;
+        dl {
+          display: grid;
+          gap: 1.75rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          padding-top: 1.75rem;
         }
 
-        .manifesto-word {
-          display: inline;
-          opacity: 0.08;
-        }
-
-        .accent-word {
-          font-style: italic;
-        }
-
-        /* ── Dual Marquee ──────────────────────────── */
-        .marquee-strip {
-          padding: 2.5rem 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          overflow: hidden;
-          opacity: 0;
-          margin: 0 -4rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.2rem;
-        }
-
-        .marquee-track {
-          display: flex;
-          width: max-content;
-        }
-
-        .marquee-forward {
-          animation: marquee-left 50s linear infinite;
-        }
-
-        .marquee-reverse {
-          animation: marquee-right 60s linear infinite;
-        }
-
-        .marquee-content {
+        dt {
           font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.3em;
+          font-size: 0.58rem;
+          letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.08);
-          white-space: nowrap;
-          padding: 0 0.5rem;
+          color: rgba(255, 255, 255, 0.32);
+          margin-bottom: 0.4rem;
         }
 
-        .marquee-bold {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: 1.6rem;
-          font-weight: 300;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.06);
-        }
-
-        @keyframes marquee-left {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-
-        @keyframes marquee-right {
-          0% {
-            transform: translateX(-50%);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-
-        /* ── Stats — oversized numbers ─────────────── */
-        .about-stats-grid {
-          display: flex;
-          align-items: stretch;
-          justify-content: center;
-          padding: 6rem 0;
-        }
-
-        .stat-col {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.2rem;
-          opacity: 0;
-        }
-
-        .stat-value {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(4rem, 10vw, 8rem);
-          font-weight: 300;
-          color: #fff;
-          line-height: 1;
-          cursor: default;
-          transition: text-shadow 0.4s ease;
-        }
-
-        .stat-value:hover {
-          text-shadow:
-            0 0 80px rgba(255, 255, 255, 0.2),
-            0 0 160px rgba(255, 255, 255, 0.08);
-        }
-
-        .stat-label {
-          font-family: var(--font-mono);
-          font-size: 0.55rem;
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.2);
-          text-align: center;
-          white-space: pre-line;
-          line-height: 1.8;
-        }
-
-        .stat-divider {
-          width: 1px;
-          background: linear-gradient(
-            180deg,
-            transparent,
-            rgba(255, 255, 255, 0.12),
-            transparent
-          );
-          transform-origin: top center;
-          margin: 1rem 0;
-        }
-
-        /* ── Tagline ───────────────────────────────── */
-        .about-tagline {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(1.1rem, 1.8vw, 1.4rem);
-          font-style: italic;
-          color: rgba(255, 255, 255, 0.3);
-          text-align: center;
+        dd {
           margin: 0;
-          padding-bottom: 4rem;
-          opacity: 0;
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: 1.35rem;
+          font-weight: 300;
+          line-height: 1.3;
         }
 
-        .tagline-accent {
-          color: rgba(255, 255, 255, 0.6);
+        dd em {
+          display: block;
+          margin-top: 0.25rem;
+          font-size: 0.95rem;
+          color: rgba(255, 255, 255, 0.4);
         }
 
-        /* ── Responsive ────────────────────────────── */
-        @media (max-width: 1024px) {
-          .about-container {
-            padding: 7rem 2.5rem;
-          }
-          .marquee-strip {
-            margin: 0 -2.5rem;
-          }
+        .ab-headline {
+          margin: 0 0 2.5rem;
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(3rem, 7vw, 5.6rem);
+          font-weight: 300;
+          line-height: 0.95;
+          letter-spacing: -0.03em;
         }
 
-        @media (max-width: 768px) {
-          .about-container {
-            padding: 5rem 1.5rem;
+        .ab-headline > span {
+          display: block;
+          overflow: hidden;
+        }
+
+        .ab-headline .line {
+          display: block;
+        }
+
+        .ab-headline .italic {
+          font-style: italic;
+          color: rgba(255, 255, 255, 0.42);
+        }
+
+        .ab-copy {
+          display: grid;
+          gap: 1.15rem;
+          max-width: 40rem;
+          margin-bottom: 3rem;
+        }
+
+        .ab-copy p {
+          margin: 0;
+          color: rgba(255, 255, 255, 0.58);
+          line-height: 1.75;
+        }
+
+        .ab-caps {
+          list-style: none;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 3.5rem;
+        }
+
+        .ab-caps li {
+          display: flex;
+          gap: 0.9rem;
+          align-items: baseline;
+          padding: 0.95rem 1rem 0.95rem 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          font-family: var(--font-mono);
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.72);
+        }
+
+        .ab-caps li span {
+          color: rgba(255, 255, 255, 0.28);
+        }
+
+        .ab-meter {
+          display: grid;
+          gap: 1.1rem;
+        }
+
+        .ab-meter-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          margin-bottom: 0.45rem;
+        }
+
+        .ab-meter-top b {
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: 2rem;
+          font-weight: 300;
+        }
+
+        .ab-meter-top span {
+          font-family: var(--font-mono);
+          font-size: 0.62rem;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.38);
+        }
+
+        .ab-meter-track {
+          height: 1px;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ab-meter-fill {
+          display: block;
+          height: 1px;
+          background: #fff;
+          transform-origin: left center;
+        }
+
+        @media (max-width: 900px) {
+          .ab-shell {
+            width: calc(100% - 2.5rem);
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
           }
-          .marquee-strip {
-            margin: 0 -1.5rem;
+          .ab-rail {
+            position: static;
           }
-          .manifesto-text {
-            font-size: clamp(2.2rem, 8vw, 3.2rem);
-          }
-          .manifesto-pin {
-            min-height: 80vh;
-          }
-          .about-stats-grid {
-            flex-direction: column;
-            gap: 3rem;
-            padding: 4rem 0;
-          }
-          .stat-divider {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.12),
-              transparent
-            );
-            margin: 0 auto;
+          .ab-caps {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
