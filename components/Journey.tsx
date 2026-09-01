@@ -5,6 +5,8 @@ import { journey } from "../lib/content";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const altitudes = ["1 200 m", "2 800 m", "4 200 m"];
+
 const Journey = () => {
   const ref = useRef<HTMLElement>(null);
 
@@ -12,28 +14,30 @@ const Journey = () => {
     if (!ref.current) return;
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        ".journey-label",
-        { opacity: 0, x: -16 },
+        ".jn-rule-fill",
+        { scaleY: 0 },
         {
-          opacity: 1,
-          x: 0,
-          duration: 0.4,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ref.current, start: "top 80%" },
+          scaleY: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".jn-trail",
+            start: "top 70%",
+            end: "bottom 40%",
+            scrub: 0.4,
+          },
         },
       );
 
-      gsap.utils.toArray<HTMLElement>(".journey-card").forEach((card, i) => {
+      gsap.utils.toArray<HTMLElement>(".jn-stop").forEach((stop, i) => {
         gsap.fromTo(
-          card,
-          { y: 36, opacity: 0 },
+          stop,
+          { opacity: 0, x: i % 2 === 0 ? -28 : 28 },
           {
-            y: 0,
             opacity: 1,
-            duration: 0.55,
-            delay: i * 0.08,
+            x: 0,
+            duration: 0.6,
             ease: "power3.out",
-            scrollTrigger: { trigger: card, start: "top 88%" },
+            scrollTrigger: { trigger: stop, start: "top 82%" },
           },
         );
       });
@@ -42,126 +46,199 @@ const Journey = () => {
   }, []);
 
   return (
-    <section ref={ref} id="journey" className="journey">
-      <div className="journey-wrap">
-        <div className="journey-label">
-          <span className="idx">03</span>
-          <span className="line" />
-          <span className="txt">Journey</span>
+    <section ref={ref} id="journey" className="jn">
+      <div className="jn-wrap">
+        <div className="jn-kicker">
+          <span>03</span>
+          <i />
+          <span>Ascent</span>
         </div>
-
-        <h2 className="journey-title">
+        <h2>
           The climb is the work.
           <em> Patience, then altitude.</em>
         </h2>
 
-        <ol className="journey-list">
-          {journey.map((item) => (
-            <li key={item.stage} className="journey-card">
-              <div className="meta">
-                <span className="stage">{item.stage}</span>
-                <span className="year">{item.year}</span>
+        <div className="jn-trail">
+          <div className="jn-rule" aria-hidden>
+            <span className="jn-rule-fill" />
+          </div>
+
+          {journey.map((item, i) => (
+            <article
+              key={item.stage}
+              className={`jn-stop ${i % 2 === 0 ? "left" : "right"}`}
+            >
+              <div className="jn-node" aria-hidden />
+              <div className="jn-card">
+                <div className="jn-meta">
+                  <span>{item.stage}</span>
+                  <span>{altitudes[i]}</span>
+                  <span>{item.year}</span>
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
               </div>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
-            </li>
+            </article>
           ))}
-        </ol>
+        </div>
       </div>
 
       <style jsx>{`
-        .journey {
+        .jn {
           position: relative;
           z-index: 2;
           background: #000;
-          padding: 8rem 0 6rem;
+          color: #fff;
+          padding: 8rem 0 7rem;
         }
 
-        .journey-wrap {
-          max-width: 1100px;
+        .jn-wrap {
+          width: min(980px, calc(100% - 5rem));
           margin: 0 auto;
-          padding: 0 4rem;
         }
 
-        .journey-label {
+        .jn-kicker {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
-          margin-bottom: 2.5rem;
-          opacity: 0;
-        }
-
-        .idx,
-        .txt {
+          gap: 1rem;
+          margin-bottom: 1.5rem;
           font-family: var(--font-mono);
-          font-size: 0.7rem;
+          font-size: 0.68rem;
           letter-spacing: 0.2em;
           text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.42);
         }
 
-        .txt {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .line {
-          width: 40px;
+        .jn-kicker i {
+          width: 36px;
           height: 1px;
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.28);
         }
 
-        .journey-title {
+        h2 {
+          margin: 0 0 4.5rem;
           font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(2.4rem, 5vw, 4.2rem);
+          font-size: clamp(2.6rem, 5.5vw, 4.6rem);
           font-weight: 300;
-          line-height: 1.2;
-          margin: 0 0 3rem;
+          line-height: 1.05;
+          letter-spacing: -0.03em;
         }
 
-        .journey-title em {
+        h2 em {
           display: block;
           font-style: italic;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(255, 255, 255, 0.42);
         }
 
-        .journey-list {
-          list-style: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        .jn-trail {
+          position: relative;
+          display: grid;
+          gap: 4.5rem;
+          padding: 1rem 0 2rem;
         }
 
-        .journey-card {
-          padding: 2.4rem 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        .jn-rule {
+          position: absolute;
+          left: 50%;
+          top: 0;
+          bottom: 0;
+          width: 1px;
+          background: rgba(255, 255, 255, 0.08);
+          transform: translateX(-50%);
         }
 
-        .meta {
+        .jn-rule-fill {
+          position: absolute;
+          inset: 0;
+          background: #fff;
+          transform-origin: top center;
+          transform: scaleY(0);
+        }
+
+        .jn-stop {
+          position: relative;
+          width: min(42%, 26rem);
+        }
+
+        .jn-stop.left {
+          justify-self: start;
+          text-align: right;
+        }
+
+        .jn-stop.right {
+          justify-self: end;
+        }
+
+        .jn-node {
+          position: absolute;
+          top: 0.55rem;
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #fff;
+          box-shadow: 0 0 0 6px #000, 0 0 24px rgba(255, 255, 255, 0.35);
+        }
+
+        .left .jn-node {
+          right: calc(-50% - 4.5px);
+        }
+
+        .right .jn-node {
+          left: calc(-50% - 4.5px);
+        }
+
+        .jn-meta {
           display: flex;
-          justify-content: space-between;
           gap: 1rem;
-          margin-bottom: 0.7rem;
+          justify-content: inherit;
           font-family: var(--font-mono);
-          font-size: 0.65rem;
+          font-size: 0.62rem;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(255, 255, 255, 0.38);
+          margin-bottom: 0.7rem;
+        }
+
+        .left .jn-meta {
+          justify-content: flex-end;
         }
 
         h3 {
+          margin: 0 0 0.6rem;
           font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(1.8rem, 3vw, 2.4rem);
+          font-size: clamp(2rem, 3.4vw, 2.8rem);
           font-weight: 300;
-          margin: 0 0 0.7rem;
         }
 
         p {
           margin: 0;
-          max-width: 40rem;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(255, 255, 255, 0.48);
           line-height: 1.7;
         }
 
         @media (max-width: 768px) {
-          .journey-wrap {
-            padding: 0 1.5rem;
+          .jn-wrap {
+            width: calc(100% - 2rem);
+          }
+          .jn-rule {
+            left: 0.4rem;
+          }
+          .jn-stop,
+          .jn-stop.left,
+          .jn-stop.right {
+            width: calc(100% - 1.8rem);
+            justify-self: end;
+            text-align: left;
+          }
+          .left .jn-meta,
+          .right .jn-meta {
+            justify-content: flex-start;
+            flex-wrap: wrap;
+          }
+          .left .jn-node,
+          .right .jn-node {
+            left: -1.7rem;
+            right: auto;
           }
         }
       `}</style>

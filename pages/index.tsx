@@ -2,12 +2,12 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useState, useEffect, useCallback } from "react";
 
-// Components
 import SmoothScroll from "../components/SmoothScroll";
 import Hero from "../components/Hero";
 import About from "../components/About";
 import Industries from "../components/Industries";
-import MountainSection from "../components/MountainScene";
+import Projects from "../components/Projects";
+import Journey from "../components/Journey";
 import Contact from "../components/Contact";
 import CustomCursor from "../components/CustomCursor";
 import Navbar from "../components/Navbar";
@@ -35,8 +35,6 @@ const Home: NextPage = () => {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#000000" />
-
-        {/* Open Graph */}
         <meta
           property="og:title"
           content="Sai Kiran Reddy | Solution Architect & Engineer"
@@ -46,12 +44,8 @@ const Home: NextPage = () => {
           content="Architecting digital solutions that transform complexity into clarity."
         />
         <meta property="og:type" content="website" />
-
-        {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/logo.png" />
-
-        {/* Preconnect to fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -60,7 +54,6 @@ const Home: NextPage = () => {
         />
       </Head>
 
-      {/* Loader */}
       {loading && (
         <div
           style={{
@@ -74,10 +67,8 @@ const Home: NextPage = () => {
         </div>
       )}
 
-      {/* Main Content */}
       <CustomCursor />
 
-      {/* Transition overlay — subtle dark fade instead of white flash */}
       <div
         className="hero-flash"
         style={{
@@ -97,7 +88,8 @@ const Home: NextPage = () => {
             <Hero />
             <About />
             <Industries />
-            <MountainSection />
+            <Projects />
+            <Journey />
             <Contact />
           </main>
         </SmoothScroll>
