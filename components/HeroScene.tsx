@@ -11,6 +11,9 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   const count = 250;
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
+  // Accumulated (not time * factor) so speeding up on scroll never jumps phase
+  const flowRef = useRef(0);
+  const spinRef = useRef(0);
 
   const { data1, data2 } = useMemo(() => {
     const d1 = new Float32Array(count * 4);
@@ -57,11 +60,19 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
     }
   }, []);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
-      materialRef.current.uniforms.uScrollProgress.value =
-        scrollProgress?.current ?? 0;
+      const p = scrollProgress?.current ?? 0;
+      const sp = p * p;
+      const dt = Math.min(delta, 0.1);
+      flowRef.current += dt * (1 + sp * 2.0);
+      spinRef.current += dt * sp * 0.45;
+
+      const u = materialRef.current.uniforms;
+      u.uTime.value = state.clock.elapsedTime;
+      u.uScrollProgress.value = p;
+      u.uFlow.value = flowRef.current;
+      u.uSpin.value = spinRef.current;
     }
   });
 
@@ -76,6 +87,8 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
 
     uniform float uTime;
     uniform float uScrollProgress;
+    uniform float uFlow;
+    uniform float uSpin;
     uniform float uThreadOrigin;
     uniform float uThreadLengthEnd;
 
@@ -99,6 +112,10 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
         float rawTaper = smoothstep(uThreadOrigin, -5.0, worldZ);
         float taper = pow(rawTaper, 1.5);
 
+        // Vortex: on scroll the threads wind into a turning spiral around the light
+        float sp = uScrollProgress * uScrollProgress;
+        angle += sp * (1.0 - rawTaper) * 4.0 + uSpin;
+
         float waveTaper = taper * taper;
         float wave1 = sin(worldZ * 0.1 - uTime * 0.3 + phase) * 1.5 * waveTaper;
         float wave2 = cos(worldZ * 0.15 - uTime * 0.2 + phase * 2.0) * 1.5 * waveTaper;
@@ -109,8 +126,7 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
         
         vec3 finalPos = vec3(pos.x + xOffset, pos.z + yOffset, worldZ);
         
-        float rushBoost = 1.0 + uScrollProgress * uScrollProgress * 15.0;
-        vStreak = normalizedY * streakLength - uTime * speed * 15.0 * rushBoost + phase;
+        vStreak = normalizedY * streakLength - uFlow * speed * 15.0 + phase;
         vAlphaPhase = normalizedY;
         vBrightness = aData2.z * (1.0 + uScrollProgress * 2.0);
         
@@ -143,7 +159,11 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   );
 
   return (
-    <instancedMesh ref={meshRef} args={[geometry, undefined as any, count]}>
+    <instancedMesh
+      ref={meshRef}
+      args={[geometry, undefined as any, count]}
+      frustumCulled={false}
+    >
       <shaderMaterial
         ref={materialRef}
         transparent
@@ -152,11 +172,123 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
         uniforms={{
           uTime: { value: 0 },
           uScrollProgress: { value: 0 },
+          uFlow: { value: 0 },
+          uSpin: { value: 0 },
           uThreadOrigin: { value: THREAD_ORIGIN },
           uThreadLengthEnd: { value: THREAD_LENGTH_END },
         }}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
+      />
+    </instancedMesh>
+  );
+};
+
+/* Light streaks that rush past the camera as it flies into the tunnel */
+const WarpStreaks = ({ scrollProgress }: ScrollRef) => {
+  const count = 360;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const travelRef = useRef(0);
+
+  const geometry = useMemo(() => {
+    const d1 = new Float32Array(count * 4);
+    const d2 = new Float32Array(count * 2);
+    for (let i = 0; i < count; i++) {
+      d1[i * 4 + 0] = Math.random() * Math.PI * 2;
+      d1[i * 4 + 1] = 0.8 + Math.pow(Math.random(), 0.7) * 7.0;
+      d1[i * 4 + 2] = Math.random();
+      d1[i * 4 + 3] = Math.random() * 0.8 + 0.6;
+
+      const isBright = Math.random() > 0.92;
+      d2[i * 2 + 0] = isBright
+        ? Math.random() * 0.012 + 0.012
+        : Math.random() * 0.006 + 0.003;
+      d2[i * 2 + 1] = isBright
+        ? Math.random() * 0.4 + 0.6
+        : Math.random() * 0.35 + 0.15;
+    }
+    const geo = new THREE.CylinderGeometry(1, 1, 1, 5, 1);
+    geo.setAttribute("aWarp", new THREE.InstancedBufferAttribute(d1, 4));
+    geo.setAttribute("aWarp2", new THREE.InstancedBufferAttribute(d2, 2));
+    return geo;
+  }, []);
+
+  useFrame((_, delta) => {
+    if (!materialRef.current || !meshRef.current) return;
+    const p = scrollProgress?.current ?? 0;
+    const warp = THREE.MathUtils.smoothstep(p, 0.12, 0.85);
+    travelRef.current += Math.min(delta, 0.1) * (0.06 + warp * 0.6);
+
+    meshRef.current.visible = warp > 0.001;
+    materialRef.current.uniforms.uWarp.value = warp;
+    materialRef.current.uniforms.uTravel.value = travelRef.current;
+  });
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[geometry, undefined as any, count]}
+      frustumCulled={false}
+      visible={false}
+    >
+      <shaderMaterial
+        ref={materialRef}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        uniforms={{
+          uWarp: { value: 0 },
+          uTravel: { value: 0 },
+        }}
+        vertexShader={
+          /* glsl */ `
+          attribute vec4 aWarp;
+          attribute vec2 aWarp2;
+
+          uniform float uWarp;
+          uniform float uTravel;
+
+          varying float vAlong;
+          varying float vFade;
+
+          const float DEPTH = 36.0;
+
+          void main() {
+            float angle = aWarp.x;
+            float radius = aWarp.y;
+            float speed = aWarp.w;
+            float thickness = aWarp2.x;
+
+            // 0 = far down the tunnel, 1 = passing the camera
+            float cycle = fract(aWarp.z + uTravel * speed);
+            float headZ = cameraPosition.z - 0.4 - (1.0 - cycle) * DEPTH;
+            float len = mix(0.4, 9.0, uWarp) * speed;
+
+            float along = position.y + 0.5;
+            float z = headZ - (1.0 - along) * len;
+            vec2 xy = vec2(cos(angle), sin(angle)) * radius + position.xz * thickness;
+
+            vAlong = along;
+            vFade = smoothstep(0.0, 0.3, cycle) * (1.0 - smoothstep(0.85, 1.0, cycle))
+              * aWarp2.y * uWarp;
+
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(xy, z, 1.0);
+          }
+        `
+        }
+        fragmentShader={
+          /* glsl */ `
+          varying float vAlong;
+          varying float vFade;
+
+          void main() {
+            float tail = pow(vAlong, 2.5);
+            float tip = pow(vAlong, 40.0) * 1.5;
+            gl_FragColor = vec4(vec3(1.0), (tail + tip) * vFade);
+          }
+        `
+        }
       />
     </instancedMesh>
   );
@@ -242,7 +374,7 @@ const CenterGlow = ({ scrollProgress }: ScrollRef) => {
 
   return (
     <mesh position={[0, 0, -38]}>
-      <planeGeometry args={[30, 30]} />
+      <planeGeometry args={[60, 60]} />
       <shaderMaterial
         ref={materialRef}
         transparent
@@ -264,12 +396,27 @@ const CenterGlow = ({ scrollProgress }: ScrollRef) => {
           uniform float uTime;
           uniform float uScrollProgress;
           void main() {
-            float d = distance(vUv, vec2(0.5));
+            // p spans the same world units as the original 30x30 plane's uv
+            vec2 p = (vUv - 0.5) * 2.0;
+            float d = length(p);
             float pulse = 1.0 + sin(uTime * 0.5) * 0.05;
             float sp = uScrollProgress * uScrollProgress;
             float spread = mix(18.0, 4.0, sp);
             float intensity = mix(0.8, 3.0, sp);
             float glow = exp(-d * spread) * intensity * pulse;
+
+            // Anamorphic flare that stretches out as the camera nears the light
+            float flare = exp(-abs(p.y) * mix(140.0, 55.0, sp))
+              * exp(-abs(p.x) * mix(6.0, 1.8, sp));
+            glow += flare * sp * 1.4 * pulse;
+
+            // Faint halo ring around the core
+            float ringDist = (d - mix(0.05, 0.13, sp)) * 60.0;
+            float ring = exp(-ringDist * ringDist);
+            glow += ring * sp * 0.1;
+
+            // Fade out well before the plane's edge so its outline never shows
+            glow *= 1.0 - smoothstep(0.6, 1.0, d);
             gl_FragColor = vec4(vec3(1.0), glow);
           }
         `
@@ -425,6 +572,7 @@ const HeroScene = ({ scrollProgress }: HeroSceneProps) => {
         <fog attach="fog" args={["#030303", 20, 60]} />
         <BackgroundWeb />
         <ThreadTunnel scrollProgress={scrollProgress} />
+        <WarpStreaks scrollProgress={scrollProgress} />
         <CenterGlow scrollProgress={scrollProgress} />
         <CameraController scrollProgress={scrollProgress} />
       </Canvas>
