@@ -1,25 +1,26 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+import { BLOCK_COUNT, MONOLITH_PHASES, RING_COUNT } from "./sceneTimeline";
+import { range, useInViewport, usePrefersReducedMotion } from "./sceneHooks";
+
 gsap.registerPlugin(ScrollTrigger);
 
-const MANIFESTO =
-  "I don\u2019t just write code \u2014 I build the systems that make everything else possible.";
-const WORDS = MANIFESTO.split(" ");
+const MonolithScene = dynamic(() => import("./MonolithScene"), { ssr: false });
 
-const STATS = [
-  { value: 8, suffix: "+", label: "Years of\nEngineering" },
-  { value: 50, suffix: "+", label: "Projects\nShipped" },
-  { value: 12, suffix: "", label: "Industries\nServed" },
-];
-
-const MARQUEE =
-  "SYSTEMS \u00B7 ARCHITECTURE \u00B7 ENGINEERING \u00B7 SCALE \u00B7 PERFORMANCE \u00B7 INFRASTRUCTURE \u00B7 ";
-const MARQUEE_ALT =
-  "CLOUD \u00B7 MICROSERVICES \u00B7 DEVOPS \u00B7 AUTOMATION \u00B7 RESILIENCE \u00B7 OPTIMIZATION \u00B7 ";
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const About = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const projectsRef = useRef<HTMLSpanElement>(null);
+  const yearsRef = useRef<HTMLSpanElement>(null);
+  const progressLineRef = useRef<HTMLDivElement>(null);
+  const progress = useRef(0);
+
+  const inView = useInViewport(containerRef);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -43,154 +44,61 @@ const About = () => {
     }
 
     const ctx = gsap.context(() => {
-      // ═══════════════════════════════════════════════
-      // ENTRANCE ANIMATIONS (triggered by revealAbout)
-      // ═══════════════════════════════════════════════
       entranceTl = gsap.timeline({ paused: true });
-
       entranceTl.fromTo(
-        ".about-label",
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" },
-      );
-
-      // ═══════════════════════════════════════════════
-      // WORD-BY-WORD SCROLL REVEAL — the hero effect
-      // ═══════════════════════════════════════════════
-      const words = gsap.utils.toArray<HTMLElement>(".manifesto-word");
-      gsap.set(words, { opacity: 0.08 });
-
-      const manifestoTl = gsap.timeline({
-        scrollTrigger: {
-          trigger: ".manifesto-pin",
-          start: "top 15%",
-          end: "+=250%",
-          pin: true,
-          scrub: 0.5,
-          pinSpacing: true,
-        },
-      });
-
-      // Each word brightens sequentially
-      manifestoTl.to(
-        words,
-        {
-          opacity: 1,
-          stagger: { each: 0.06 },
-          duration: 1,
-          ease: "none",
-        },
-        0,
-      );
-
-      // Subtle cinematic zoom during reveal
-      manifestoTl.fromTo(
-        ".manifesto-text",
-        { scale: 0.97 },
-        { scale: 1, duration: 1, ease: "none" },
-        0,
-      );
-
-      // Hold at end before unpin
-      manifestoTl.to({}, { duration: 0.25 });
-
-      // ═══════════════════════════════════════════════
-      // MARQUEE — entrance on scroll
-      // ═══════════════════════════════════════════════
-      gsap.fromTo(
-        ".marquee-strip",
+        ".about-chrome",
         { opacity: 0 },
-        {
-          opacity: 1,
-          duration: 0.8,
-          scrollTrigger: {
-            trigger: ".marquee-strip",
-            start: "top 92%",
-            toggleActions: "play none none none",
-          },
-        },
+        { opacity: 1, duration: 0.6, ease: "power2.out" },
       );
 
       // ═══════════════════════════════════════════════
-      // STATS — dramatic count-up with stagger
+      // PINNED STAGE — scroll drives the monolith scene
       // ═══════════════════════════════════════════════
-      gsap.utils.toArray<HTMLElement>(".stat-col").forEach((col, i) => {
-        gsap.fromTo(
-          col,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.7,
-            delay: i * 0.15,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-      });
+      const tl = gsap.timeline({
+        defaults: { ease: "none" },
+        scrollTrigger: {
+          trigger: stageRef.current,
+          start: "top top",
+          end: "+=400%",
+          pin: true,
+          scrub: 0.6,
+          onUpdate: (self) => {
+            const p = self.progress;
+            progress.current = p;
 
-      // Stat vertical dividers draw in
-      gsap.utils.toArray<HTMLElement>(".stat-divider").forEach((d, i) => {
-        gsap.fromTo(
-          d,
-          { scaleY: 0 },
-          {
-            scaleY: 1,
-            duration: 0.8,
-            delay: 0.1 + i * 0.12,
-            ease: "power3.inOut",
-            scrollTrigger: {
-              trigger: ".about-stats-grid",
-              start: "top 82%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-      });
-
-      // Count-up numbers
-      gsap.utils.toArray<HTMLElement>(".stat-value").forEach((el) => {
-        const target = Number(el.dataset.value);
-        const suffix = el.dataset.suffix || "";
-        const proxy = { val: 0 };
-        gsap.to(proxy, {
-          val: target,
-          duration: 1.5,
-          ease: "power2.out",
-          onUpdate: () => {
-            el.textContent = Math.round(proxy.val) + suffix;
-          },
-          scrollTrigger: {
-            trigger: el,
-            start: "top 85%",
-            toggleActions: "play none none none",
-          },
-        });
-      });
-
-      // ═══════════════════════════════════════════════
-      // TAGLINE — blur reveal
-      // ═══════════════════════════════════════════════
-      gsap.fromTo(
-        ".about-tagline",
-        { y: 25, opacity: 0, filter: "blur(10px)" },
-        {
-          y: 0,
-          opacity: 1,
-          filter: "blur(0px)",
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ".about-tagline",
-            start: "top 88%",
-            toggleActions: "play none none none",
+            if (projectsRef.current) {
+              const n = range(p, ...MONOLITH_PHASES.orbit) * BLOCK_COUNT;
+              projectsRef.current.textContent = pad2(Math.round(n));
+            }
+            if (yearsRef.current) {
+              const n = range(p, ...MONOLITH_PHASES.rings) * RING_COUNT;
+              yearsRef.current.textContent = pad2(Math.round(n));
+            }
+            if (progressLineRef.current) {
+              progressLineRef.current.style.transform = `scaleX(${p})`;
+            }
           },
         },
-      );
+      });
+
+      // Captions — one at a time, timed to the scene's phases (0..1)
+      const caption = (sel: string, inAt: number, outAt?: number) => {
+        tl.fromTo(
+          sel,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.05 },
+          inAt,
+        );
+        if (outAt !== undefined) {
+          tl.to(sel, { opacity: 0, y: -24, duration: 0.04 }, outAt);
+        }
+      };
+      tl.to(".cap-name", { opacity: 0, y: -24, duration: 0.04 }, 0.11);
+      caption(".cap-projects", 0.17, 0.44);
+      caption(".cap-years", 0.57, 0.84);
+      caption(".cap-final", 0.89);
+      tl.fromTo(".about-hint", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 0.2);
+      tl.to({}, { duration: 0 }, 1); // timeline spans exactly 0..1
     }, containerRef);
 
     return () => {
@@ -206,99 +114,101 @@ const About = () => {
       className="about-section"
       style={{ visibility: "hidden" }}
     >
-      <div className="about-container">
-        {/* ── Label ── */}
-        <div className="about-header">
+      {/* Full text for screen readers and search engines */}
+      <div className="sr-only">
+        <h2>About</h2>
+        <p>
+          I don&rsquo;t just write code &mdash; I build the systems that make
+          everything else possible.
+        </p>
+        <ul>
+          <li>8+ years of engineering</li>
+          <li>50+ projects shipped</li>
+          <li>12 industries served</li>
+        </ul>
+        <p>I think in systems. Not frameworks &mdash; systems.</p>
+      </div>
+
+      <div ref={stageRef} className="about-stage" aria-hidden="true">
+        <div className="about-canvas">
+          <MonolithScene progress={progress} active={inView} reduced={reduced} />
+        </div>
+
+        <div className="about-chrome">
           <div className="about-label">
             <span className="label-index">01</span>
             <span className="label-line" />
             <span className="label-text">About</span>
           </div>
-        </div>
 
-        {/* ── Pinned Manifesto — word-by-word scroll reveal ── */}
-        <div className="manifesto-pin">
-          <div className="manifesto-text">
-            {WORDS.map((word, i) => (
-              <span
-                key={i}
-                className={`manifesto-word${word === "systems" ? " accent-word" : ""}`}
-              >
-                {word}{" "}
+          <div className="about-captions">
+            <div className="cap cap-name">
+              <span className="cap-title">Sai Kiran Reddy</span>
+              <span className="cap-sub">Solution Architect &amp; Engineer</span>
+            </div>
+            <div className="cap cap-projects">
+              <span ref={projectsRef} className="cap-number">
+                00
               </span>
-            ))}
+              <span className="cap-sub">Projects shipped</span>
+            </div>
+            <div className="cap cap-years">
+              <span ref={yearsRef} className="cap-number">
+                00
+              </span>
+              <span className="cap-sub">Years of engineering</span>
+            </div>
+            <div className="cap cap-final">
+              <span className="cap-title cap-italic">I think in systems.</span>
+            </div>
+          </div>
+
+          <div className="about-hint">
+            <span className="hint-fine">Click the blocks</span>
+            <span className="hint-coarse">Tap the blocks</span>
+          </div>
+
+          <div className="about-progress">
+            <div ref={progressLineRef} className="about-progress-fill" />
           </div>
         </div>
-
-        {/* ── Dual Marquee Strip ── */}
-        <div className="marquee-strip">
-          <div className="marquee-track marquee-forward">
-            <span className="marquee-content marquee-bold">{MARQUEE.repeat(4)}</span>
-            <span className="marquee-content marquee-bold" aria-hidden="true">
-              {MARQUEE.repeat(4)}
-            </span>
-          </div>
-          <div className="marquee-track marquee-reverse">
-            <span className="marquee-content">{MARQUEE_ALT.repeat(4)}</span>
-            <span className="marquee-content" aria-hidden="true">
-              {MARQUEE_ALT.repeat(4)}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Stats — oversized numbers with vertical dividers ── */}
-        <div className="about-stats-grid">
-          {STATS.map((stat, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <div className="stat-divider" />}
-              <div className="stat-col">
-                <span
-                  className="stat-value interactive"
-                  data-value={stat.value}
-                  data-suffix={stat.suffix}
-                >
-                  0
-                </span>
-                <span className="stat-label">{stat.label}</span>
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* ── Tagline — blur reveal ── */}
-        <p className="about-tagline">
-          I think in systems. Not frameworks &mdash;{" "}
-          <em className="tagline-accent">systems.</em>
-        </p>
       </div>
 
       <style jsx>{`
-        /* ── Section ───────────────────────────────── */
         .about-section {
           position: relative;
           z-index: 2;
           background: #000;
-          overflow: hidden;
         }
 
-        .about-container {
-          max-width: 1300px;
+        .about-stage {
+          position: relative;
+          height: 100vh;
           width: 100%;
-          margin: 0 auto;
-          padding: 8rem 4rem;
+          overflow: hidden;
+          background: #000;
+        }
+
+        .about-canvas {
+          position: absolute;
+          inset: 0;
+        }
+
+        .about-chrome {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0;
         }
 
         /* ── Label ─────────────────────────────────── */
-        .about-header {
-          margin-bottom: 0;
-        }
-
         .about-label {
+          position: absolute;
+          top: 3rem;
+          left: 4rem;
           display: flex;
           align-items: center;
           gap: 1.5rem;
-          opacity: 0;
-          margin-bottom: 2.5rem;
         }
 
         .label-index {
@@ -322,204 +232,118 @@ const About = () => {
           color: rgba(255, 255, 255, 0.5);
         }
 
-        /* ── Manifesto — pinned scroll zone ────────── */
-        .manifesto-pin {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
+        /* ── Captions — one small line per scene ───── */
+        .about-captions {
+          position: absolute;
+          left: 4rem;
+          bottom: 4.5rem;
         }
 
-        .manifesto-text {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(3.2rem, 7vw, 6rem);
-          font-weight: 300;
-          line-height: 1.25;
-          color: #fff;
-          max-width: 1000px;
-          will-change: transform;
-        }
-
-        .manifesto-word {
-          display: inline;
-          opacity: 0.08;
-        }
-
-        .accent-word {
-          font-style: italic;
-        }
-
-        /* ── Dual Marquee ──────────────────────────── */
-        .marquee-strip {
-          padding: 2.5rem 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          overflow: hidden;
-          opacity: 0;
-          margin: 0 -4rem;
+        .cap {
+          position: absolute;
+          left: 0;
+          bottom: 0;
           display: flex;
           flex-direction: column;
-          gap: 1.2rem;
-        }
-
-        .marquee-track {
-          display: flex;
-          width: max-content;
-        }
-
-        .marquee-forward {
-          animation: marquee-left 50s linear infinite;
-        }
-
-        .marquee-reverse {
-          animation: marquee-right 60s linear infinite;
-        }
-
-        .marquee-content {
-          font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.08);
+          gap: 0.6rem;
           white-space: nowrap;
-          padding: 0 0.5rem;
-        }
-
-        .marquee-bold {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: 1.6rem;
-          font-weight: 300;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.06);
-        }
-
-        @keyframes marquee-left {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-
-        @keyframes marquee-right {
-          0% {
-            transform: translateX(-50%);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-
-        /* ── Stats — oversized numbers ─────────────── */
-        .about-stats-grid {
-          display: flex;
-          align-items: stretch;
-          justify-content: center;
-          padding: 6rem 0;
-        }
-
-        .stat-col {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1.2rem;
           opacity: 0;
         }
 
-        .stat-value {
+        .cap-name {
+          opacity: 1;
+        }
+
+        .cap-title {
           font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(4rem, 10vw, 8rem);
+          font-size: clamp(1.6rem, 2.6vw, 2.4rem);
           font-weight: 300;
           color: #fff;
           line-height: 1;
-          cursor: default;
-          transition: text-shadow 0.4s ease;
         }
 
-        .stat-value:hover {
-          text-shadow:
-            0 0 80px rgba(255, 255, 255, 0.2),
-            0 0 160px rgba(255, 255, 255, 0.08);
+        .cap-italic {
+          font-style: italic;
         }
 
-        .stat-label {
+        .cap-number {
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(3.5rem, 7vw, 6rem);
+          font-weight: 300;
+          color: #fff;
+          line-height: 0.9;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .cap-sub {
           font-family: var(--font-mono);
-          font-size: 0.55rem;
+          font-size: 0.6rem;
           letter-spacing: 0.3em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.2);
-          text-align: center;
-          white-space: pre-line;
-          line-height: 1.8;
+          color: rgba(255, 255, 255, 0.4);
         }
 
-        .stat-divider {
-          width: 1px;
-          background: linear-gradient(
-            180deg,
-            transparent,
-            rgba(255, 255, 255, 0.12),
-            transparent
-          );
-          transform-origin: top center;
-          margin: 1rem 0;
-        }
-
-        /* ── Tagline ───────────────────────────────── */
-        .about-tagline {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(1.1rem, 1.8vw, 1.4rem);
-          font-style: italic;
+        /* ── Hint ──────────────────────────────────── */
+        .about-hint {
+          position: absolute;
+          right: 5rem;
+          bottom: 4.5rem;
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
           color: rgba(255, 255, 255, 0.3);
-          text-align: center;
-          margin: 0;
-          padding-bottom: 4rem;
           opacity: 0;
         }
 
-        .tagline-accent {
-          color: rgba(255, 255, 255, 0.6);
+        .hint-coarse {
+          display: none;
         }
 
-        /* ── Responsive ────────────────────────────── */
-        @media (max-width: 1024px) {
-          .about-container {
-            padding: 7rem 2.5rem;
+        @media (pointer: coarse) {
+          .hint-fine {
+            display: none;
           }
-          .marquee-strip {
-            margin: 0 -2.5rem;
+          .hint-coarse {
+            display: inline;
           }
+        }
+
+        /* ── Progress ──────────────────────────────── */
+        .about-progress {
+          position: absolute;
+          left: 4rem;
+          right: 5rem;
+          bottom: 2.5rem;
+          height: 1px;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .about-progress-fill {
+          height: 100%;
+          background: rgba(255, 255, 255, 0.35);
+          transform: scaleX(0);
+          transform-origin: left center;
         }
 
         @media (max-width: 768px) {
-          .about-container {
-            padding: 5rem 1.5rem;
+          .about-label {
+            top: 2rem;
+            left: 1.5rem;
           }
-          .marquee-strip {
-            margin: 0 -1.5rem;
+          .about-captions {
+            left: 1.5rem;
+            bottom: 5.5rem;
           }
-          .manifesto-text {
-            font-size: clamp(2.2rem, 8vw, 3.2rem);
+          .about-hint {
+            left: 1.5rem;
+            right: auto;
+            bottom: 3.5rem;
           }
-          .manifesto-pin {
-            min-height: 80vh;
-          }
-          .about-stats-grid {
-            flex-direction: column;
-            gap: 3rem;
-            padding: 4rem 0;
-          }
-          .stat-divider {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(
-              90deg,
-              transparent,
-              rgba(255, 255, 255, 0.12),
-              transparent
-            );
-            margin: 0 auto;
+          .about-progress {
+            left: 1.5rem;
+            right: 3rem;
+            bottom: 2rem;
           }
         }
       `}</style>
