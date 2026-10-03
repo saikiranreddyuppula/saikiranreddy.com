@@ -184,116 +184,6 @@ const ThreadTunnel = ({ scrollProgress }: ScrollRef) => {
   );
 };
 
-/* Light streaks that rush past the camera as it flies into the tunnel */
-const WarpStreaks = ({ scrollProgress }: ScrollRef) => {
-  const count = 360;
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const travelRef = useRef(0);
-
-  const geometry = useMemo(() => {
-    const d1 = new Float32Array(count * 4);
-    const d2 = new Float32Array(count * 2);
-    for (let i = 0; i < count; i++) {
-      d1[i * 4 + 0] = Math.random() * Math.PI * 2;
-      d1[i * 4 + 1] = 0.8 + Math.pow(Math.random(), 0.7) * 7.0;
-      d1[i * 4 + 2] = Math.random();
-      d1[i * 4 + 3] = Math.random() * 0.8 + 0.6;
-
-      const isBright = Math.random() > 0.92;
-      d2[i * 2 + 0] = isBright
-        ? Math.random() * 0.012 + 0.012
-        : Math.random() * 0.006 + 0.003;
-      d2[i * 2 + 1] = isBright
-        ? Math.random() * 0.4 + 0.6
-        : Math.random() * 0.35 + 0.15;
-    }
-    const geo = new THREE.CylinderGeometry(1, 1, 1, 5, 1);
-    geo.setAttribute("aWarp", new THREE.InstancedBufferAttribute(d1, 4));
-    geo.setAttribute("aWarp2", new THREE.InstancedBufferAttribute(d2, 2));
-    return geo;
-  }, []);
-
-  useFrame((_, delta) => {
-    if (!materialRef.current || !meshRef.current) return;
-    const p = scrollProgress?.current ?? 0;
-    const warp = THREE.MathUtils.smoothstep(p, 0.12, 0.85);
-    travelRef.current += Math.min(delta, 0.1) * (0.06 + warp * 0.6);
-
-    meshRef.current.visible = warp > 0.001;
-    materialRef.current.uniforms.uWarp.value = warp;
-    materialRef.current.uniforms.uTravel.value = travelRef.current;
-  });
-
-  return (
-    <instancedMesh
-      ref={meshRef}
-      args={[geometry, undefined as any, count]}
-      frustumCulled={false}
-      visible={false}
-    >
-      <shaderMaterial
-        ref={materialRef}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        uniforms={{
-          uWarp: { value: 0 },
-          uTravel: { value: 0 },
-        }}
-        vertexShader={
-          /* glsl */ `
-          attribute vec4 aWarp;
-          attribute vec2 aWarp2;
-
-          uniform float uWarp;
-          uniform float uTravel;
-
-          varying float vAlong;
-          varying float vFade;
-
-          const float DEPTH = 36.0;
-
-          void main() {
-            float angle = aWarp.x;
-            float radius = aWarp.y;
-            float speed = aWarp.w;
-            float thickness = aWarp2.x;
-
-            // 0 = far down the tunnel, 1 = passing the camera
-            float cycle = fract(aWarp.z + uTravel * speed);
-            float headZ = cameraPosition.z - 0.4 - (1.0 - cycle) * DEPTH;
-            float len = mix(0.4, 9.0, uWarp) * speed;
-
-            float along = position.y + 0.5;
-            float z = headZ - (1.0 - along) * len;
-            vec2 xy = vec2(cos(angle), sin(angle)) * radius + position.xz * thickness;
-
-            vAlong = along;
-            vFade = smoothstep(0.0, 0.3, cycle) * (1.0 - smoothstep(0.85, 1.0, cycle))
-              * aWarp2.y * uWarp;
-
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(xy, z, 1.0);
-          }
-        `
-        }
-        fragmentShader={
-          /* glsl */ `
-          varying float vAlong;
-          varying float vFade;
-
-          void main() {
-            float tail = pow(vAlong, 2.5);
-            float tip = pow(vAlong, 40.0) * 1.5;
-            gl_FragColor = vec4(vec3(1.0), (tail + tip) * vFade);
-          }
-        `
-        }
-      />
-    </instancedMesh>
-  );
-};
-
 const BackgroundWeb = () => {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
 
@@ -572,7 +462,6 @@ const HeroScene = ({ scrollProgress }: HeroSceneProps) => {
         <fog attach="fog" args={["#030303", 20, 60]} />
         <BackgroundWeb />
         <ThreadTunnel scrollProgress={scrollProgress} />
-        <WarpStreaks scrollProgress={scrollProgress} />
         <CenterGlow scrollProgress={scrollProgress} />
         <CameraController scrollProgress={scrollProgress} />
       </Canvas>
