@@ -9,6 +9,7 @@ import {
   range,
 } from "./sceneHooks";
 import { BLOCK_COUNT, MONOLITH_PHASES, RING_COUNT } from "./sceneTimeline";
+import CinematicPost from "./CinematicPost";
 
 type ProgressRef = React.MutableRefObject<number>;
 
@@ -139,14 +140,16 @@ const Monolith = ({
   const blocks = useMemo(buildBlocks, []);
   const glowTexture = useMemo(makeGlowTexture, []);
 
-  // Spring "physics" for click / hover knocks — blocks always settle back
+  // Every block chases its scroll target on its own underdamped spring, so
+  // formations ripple and settle instead of gliding in lockstep. Clicks and
+  // hovers add velocity to the same springs.
   const physics = useMemo(
     () => ({
-      offset: blocks.map(() => new THREE.Vector3()),
+      pos: blocks.map((b) => b.mono.clone()),
       vel: blocks.map(() => new THREE.Vector3()),
+      stiffness: blocks.map((_, i) => 55 + ((i * 37) % 30)),
       spin: blocks.map(() => new THREE.Vector3()),
       spinVel: blocks.map(() => new THREE.Vector3()),
-      current: blocks.map(() => new THREE.Vector3()),
     }),
     [blocks],
   );
@@ -186,8 +189,8 @@ const Monolith = ({
     group.getWorldQuaternion(tmp.invGroup).invert();
     tmp.dir.copy(rayDir).applyQuaternion(tmp.invGroup);
 
-    const origin = physics.current[index];
-    physics.current.forEach((pos, j) => {
+    const origin = physics.pos[index];
+    physics.pos.forEach((pos, j) => {
       const d = pos.distanceTo(origin);
       if (d > 1.3) return;
       const f = strength * (1 - d / 1.3);
@@ -217,7 +220,9 @@ const Monolith = ({
     const group = groupRef.current;
     if (!mesh || !group) return;
 
-    const dt = Math.min(delta, 1 / 30); // spring integration step
+    // Fixed-size substeps keep the springs stable at any frame rate
+    const steps = Math.min(Math.ceil(Math.min(delta, 0.1) * 120), 12);
+    const h = Math.min(delta, 0.1) / steps;
     smooth.current = THREE.MathUtils.damp(
       smooth.current,
       progress.current,
@@ -265,18 +270,23 @@ const Monolith = ({
       q.slerp(qTumble, tOut);
       q.slerp(b.towerRot, tIn);
 
-      // Springs pull knocked blocks back home
-      const off = physics.offset[i];
+      // Spring toward the target (ζ ≈ 0.55: a little overshoot, then settle)
+      const pos = physics.pos[i];
       const vel = physics.vel[i];
-      vel.addScaledVector(off, -30 * dt).multiplyScalar(1 - Math.min(5 * dt, 1));
-      off.addScaledVector(vel, dt);
+      const k = physics.stiffness[i];
+      const c = 1.1 * Math.sqrt(k);
       const spin = physics.spin[i];
       const spinVel = physics.spinVel[i];
-      spinVel.addScaledVector(spin, -20 * dt).multiplyScalar(1 - Math.min(4 * dt, 1));
-      spin.addScaledVector(spinVel, dt);
+      for (let s = 0; s < steps; s++) {
+        vel.x += ((v.x - pos.x) * k - vel.x * c) * h;
+        vel.y += ((v.y - pos.y) * k - vel.y * c) * h;
+        vel.z += ((v.z - pos.z) * k - vel.z * c) * h;
+        pos.addScaledVector(vel, h);
+        spinVel.addScaledVector(spin, -24 * h).addScaledVector(spinVel, -5 * h);
+        spin.addScaledVector(spinVel, h);
+      }
 
-      physics.current[i].copy(v);
-      dummy.position.copy(v).add(off);
+      dummy.position.copy(pos);
       euler.set(spin.x, spin.y, spin.z);
       qSpin.setFromEuler(euler);
       dummy.quaternion.copy(q).multiply(qSpin);
@@ -318,7 +328,7 @@ const Monolith = ({
     if (keyLightRef.current) keyLightRef.current.intensity = 0.25 + towerP * 0.9;
     if (haloRef.current) {
       const mat = haloRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity = 0.16 - orbIn * 0.06 + towerP * 0.06;
+      mat.opacity = 0.06 - orbIn * 0.025 + towerP * 0.025;
     }
 
     // Eight rings light up one after another — one per year
@@ -351,7 +361,7 @@ const Monolith = ({
           map={glowTexture}
           color="#ffffff"
           transparent
-          opacity={0.16}
+          opacity={0.06}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           toneMapped={false}
@@ -563,6 +573,7 @@ const MonolithScene = ({ progress, active, reduced }: MonolithSceneProps) => (
     <Monolith progress={progress} reduced={reduced} />
     <CursorLight />
     <CameraRig progress={progress} />
+    <CinematicPost aoRadius={0.5} aoIntensity={3} bloom={1.1} bloomThreshold={0.82} />
   </Canvas>
 );
 

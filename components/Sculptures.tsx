@@ -19,17 +19,56 @@ export interface SculptureProps {
   /** 0..1 — eased "take apart" amount */
   explode: NumRef;
   tags: string[];
-  /** Mount the tag labels (only the sculpture in focus does) */
-  labels: boolean;
-  /** Tag labels currently showing */
+  /** Tag labels currently showing (they stay mounted; drei <Html> is
+   *  unreliable to unmount under React 19) */
   labelsVisible: boolean;
   reduced: boolean;
 }
 
+/** Fine cast-plaster grain: soft blotches plus speckle, tileable. */
+const makeGrainTexture = () => {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const img = ctx.createImageData(size, size);
+  // Low-frequency value noise for soft blotches
+  const cells = 8;
+  const grid = Array.from({ length: (cells + 1) * (cells + 1) }, () => Math.random());
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t * t * (3 - 2 * t);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const gx = (x / size) * cells;
+      const gy = (y / size) * cells;
+      const ix = Math.floor(gx);
+      const iy = Math.floor(gy);
+      const at = (cx: number, cy: number) =>
+        grid[(cy % cells) * (cells + 1) + (cx % cells)];
+      const top = lerp(at(ix, iy), at(ix + 1, iy), gx - ix);
+      const bottom = lerp(at(ix, iy + 1), at(ix + 1, iy + 1), gx - ix);
+      const blotch = lerp(top, bottom, gy - iy);
+      const v = 150 + blotch * 50 + (Math.random() - 0.5) * 70;
+      const i = (y * size + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(3, 3);
+  return tex;
+};
+
+const grain = makeGrainTexture();
+
 const plaster = new THREE.MeshStandardMaterial({
-  color: "#d6d6d6",
-  roughness: 0.55,
-  metalness: 0.05,
+  color: "#d9d9d9",
+  roughness: 0.82,
+  roughnessMap: grain,
+  bumpMap: grain,
+  bumpScale: 0.6,
+  metalness: 0,
 });
 
 const ink = new THREE.MeshStandardMaterial({
@@ -102,7 +141,7 @@ const PH = 0.8;
 const PD = 0.95;
 const PT = 0.035;
 
-const Parcel = ({ lit, explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const Parcel = ({ lit, explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const root = useRef<THREE.Group>(null);
   const front = useRef<THREE.Group>(null);
   const back = useRef<THREE.Group>(null);
@@ -179,13 +218,13 @@ const Parcel = ({ lit, explode, tags, labels, labelsVisible, reduced }: Sculptur
       {/* Contents float up out of the net: a card, a crate, a cluster */}
       <ExplodePart explode={explode} position={[-0.3, 0.07, 0.14]} offset={[-0.6, 1.05, 0.35]}>
         <RoundedBox args={[0.42, 0.025, 0.28]} radius={0.012} material={plaster} rotation-x={0.25} />
-        {labels && <TagLabel position={[0, 0.3, 0]} text={tags[0]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0.3, 0]} text={tags[0]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} position={[0.3, 0.18, -0.12]} offset={[0.6, 1.25, 0]}>
         <mesh material={plaster} rotation-y={0.4}>
           <boxGeometry args={[0.28, 0.28, 0.28]} />
         </mesh>
-        {labels && <TagLabel position={[0, 0.38, 0]} text={tags[1]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0.38, 0]} text={tags[1]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} position={[-0.05, 0.09, -0.24]} offset={[0.05, 1.75, -0.3]}>
         {[
@@ -198,7 +237,7 @@ const Parcel = ({ lit, explode, tags, labels, labelsVisible, reduced }: Sculptur
             <boxGeometry args={[0.1, 0.1, 0.1]} />
           </mesh>
         ))}
-        {labels && <TagLabel position={[0, 0.3, 0]} text={tags[2]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0.3, 0]} text={tags[2]} visible={labelsVisible} />
       </ExplodePart>
     </group>
   );
@@ -206,7 +245,7 @@ const Parcel = ({ lit, explode, tags, labels, labelsVisible, reduced }: Sculptur
 
 /* ── 02 Cyber Security — a padlock inside gyroscope rings ─────── */
 
-const Padlock = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const Padlock = ({ explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const root = useRef<THREE.Group>(null);
   const rings = useRef<THREE.Group>(null);
   const ringA = useRef<THREE.Mesh>(null);
@@ -236,7 +275,7 @@ const Padlock = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePro
         <mesh material={ink} position={[0, -0.05, 0.215]}>
           <boxGeometry args={[0.045, 0.18, 0.02]} />
         </mesh>
-        {labels && <TagLabel position={[0, -0.6, 0.3]} text={tags[2]} visible={labelsVisible} />}
+        <TagLabel position={[0, -0.6, 0.3]} text={tags[2]} visible={labelsVisible} />
       </ExplodePart>
 
       {/* Shackle lifts free when taken apart */}
@@ -249,7 +288,7 @@ const Padlock = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePro
             <cylinderGeometry args={[0.06, 0.06, 0.36, 20]} />
           </mesh>
         ))}
-        {labels && <TagLabel position={[0, 0.85, 0]} text={tags[0]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0.85, 0]} text={tags[0]} visible={labelsVisible} />
       </ExplodePart>
 
       {/* Perimeter rings */}
@@ -260,7 +299,7 @@ const Padlock = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePro
         <mesh ref={ringB} material={plaster}>
           <torusGeometry args={[0.85, 0.016, 12, 128]} />
         </mesh>
-        {labels && <TagLabel position={[1.0, 0.1, 0]} text={tags[1]} visible={labelsVisible} />}
+        <TagLabel position={[1.0, 0.1, 0]} text={tags[1]} visible={labelsVisible} />
       </group>
     </group>
   );
@@ -304,7 +343,7 @@ const Strand = ({ phase }: { phase: number }) => {
   );
 };
 
-const Helix = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const Helix = ({ explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const root = useRef<THREE.Group>(null);
   const spin = useIdleSpin(explode, reduced, 0.4);
 
@@ -328,11 +367,11 @@ const Helix = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps
     <group ref={root}>
       <ExplodePart explode={explode} offset={[-0.55, 0.1, 0]}>
         <Strand phase={0} />
-        {labels && <TagLabel position={[-0.35, HELIX_Y0 + HELIX_H + 0.25, 0]} text={tags[0]} visible={labelsVisible} />}
+        <TagLabel position={[-0.35, HELIX_Y0 + HELIX_H + 0.25, 0]} text={tags[0]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} offset={[0.55, -0.1, 0]}>
         <Strand phase={Math.PI} />
-        {labels && <TagLabel position={[0.35, HELIX_Y0 - 0.2, 0]} text={tags[2]} visible={labelsVisible} />}
+        <TagLabel position={[0.35, HELIX_Y0 - 0.2, 0]} text={tags[2]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} offset={[0, 0, 0.3]}>
         {rungs.map(({ y, angle }, k) => (
@@ -342,7 +381,7 @@ const Helix = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps
             </mesh>
           </group>
         ))}
-        {labels && <TagLabel position={[0, HELIX_Y0 + HELIX_H / 2, 0.45]} text={tags[1]} visible={labelsVisible} />}
+        <TagLabel position={[0, HELIX_Y0 + HELIX_H / 2, 0.45]} text={tags[1]} visible={labelsVisible} />
       </ExplodePart>
     </group>
   );
@@ -350,7 +389,7 @@ const Helix = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps
 
 /* ── 04 Hospitality — a hotel key and its fob on a ring ───────── */
 
-const HotelKey = ({ explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const HotelKey = ({ explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const root = useRef<THREE.Group>(null);
   const keyPivot = useRef<THREE.Group>(null);
   const tagPivot = useRef<THREE.Group>(null);
@@ -393,7 +432,7 @@ const HotelKey = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePr
         <mesh material={plaster}>
           <torusGeometry args={[0.13, 0.022, 12, 48]} />
         </mesh>
-        {labels && <TagLabel position={[0, 0.32, 0]} text={tags[2]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0.32, 0]} text={tags[2]} visible={labelsVisible} />
       </ExplodePart>
 
       {/* Key */}
@@ -415,7 +454,7 @@ const HotelKey = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePr
             <boxGeometry args={[0.16, 0.07, 0.05]} />
           </mesh>
         </group>
-        {labels && <TagLabel position={[-0.75, 1.0, 0]} text={tags[0]} visible={labelsVisible} />}
+        <TagLabel position={[-0.75, 1.0, 0]} text={tags[0]} visible={labelsVisible} />
       </ExplodePart>
 
       {/* Fob */}
@@ -426,7 +465,7 @@ const HotelKey = ({ explode, tags, labels, labelsVisible, reduced }: SculpturePr
             <boxGeometry args={[0.16, 0.1, 0.01]} />
           </mesh>
         </group>
-        {labels && <TagLabel position={[0.75, 1.0, 0]} text={tags[1]} visible={labelsVisible} />}
+        <TagLabel position={[0.75, 1.0, 0]} text={tags[1]} visible={labelsVisible} />
       </ExplodePart>
     </group>
   );
@@ -485,7 +524,7 @@ const NOISE_GLSL = /* glsl */ `
 
 const MIND_POINTS = 2600;
 
-const NeuralCloud = ({ lit, explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const NeuralCloud = ({ lit, explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const core = useRef<THREE.Mesh>(null);
   const coreMat = useRef<THREE.MeshBasicMaterial>(null);
 
@@ -584,13 +623,13 @@ const NeuralCloud = ({ lit, explode, tags, labels, labelsVisible, reduced }: Scu
         />
       </mesh>
       <ExplodePart explode={explode} position={[-0.75, 0.55, 0]} offset={[-0.35, 0.2, 0]}>
-        {labels && <TagLabel position={[0, 0, 0]} text={tags[0]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0, 0]} text={tags[0]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} position={[0.8, 0.15, 0]} offset={[0.4, 0, 0]}>
-        {labels && <TagLabel position={[0, 0, 0]} text={tags[1]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0, 0]} text={tags[1]} visible={labelsVisible} />
       </ExplodePart>
       <ExplodePart explode={explode} position={[0, -0.75, 0.3]} offset={[0, -0.25, 0.2]}>
-        {labels && <TagLabel position={[0, 0, 0]} text={tags[2]} visible={labelsVisible} />}
+        <TagLabel position={[0, 0, 0]} text={tags[2]} visible={labelsVisible} />
       </ExplodePart>
     </group>
   );
@@ -645,7 +684,7 @@ const GEARS = [
   { teeth: 7, contactAngle: -0.7 },
 ];
 
-const Gears = ({ lit, explode, tags, labels, labelsVisible, reduced }: SculptureProps) => {
+const Gears = ({ lit, explode, tags, labelsVisible, reduced }: SculptureProps) => {
   const root = useRef<THREE.Group>(null);
   const gearRefs = [
     useRef<THREE.Group>(null),
@@ -709,9 +748,7 @@ const Gears = ({ lit, explode, tags, labels, labelsVisible, reduced }: Sculpture
           <mesh material={ink} rotation-x={Math.PI / 2}>
             <cylinderGeometry args={[0.05, 0.05, 0.3, 20]} />
           </mesh>
-          {labels && (
-            <TagLabel position={labelOffsets[k]} text={tagForGear[k]} visible={labelsVisible} />
-          )}
+          <TagLabel position={labelOffsets[k]} text={tagForGear[k]} visible={labelsVisible} />
         </ExplodePart>
       ))}
     </group>

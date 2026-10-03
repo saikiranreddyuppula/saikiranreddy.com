@@ -1,9 +1,10 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { clamp01, smoothstep } from "./sceneHooks";
 import { galleryPosition } from "./sceneTimeline";
 import { SCULPTURES } from "./Sculptures";
+import CinematicPost from "./CinematicPost";
 
 type ProgressRef = React.MutableRefObject<number>;
 
@@ -85,6 +86,7 @@ const Exhibit = ({ index, position, tags, exploded, focused, reduced }: ExhibitP
   const sculptureRef = useRef<THREE.Group>(null);
   const lit = useRef(0);
   const explode = useRef(0);
+  const explodeVel = useRef(0);
   const target = useMemo(() => new THREE.Object3D(), []);
   const beam = useMemo(beamMaterial, []);
   const pool = useMemo(poolMaterial, []);
@@ -97,20 +99,36 @@ const Exhibit = ({ index, position, tags, exploded, focused, reduced }: ExhibitP
 
   const Sculpture = SCULPTURES[index];
 
+  // Every solid part casts and receives the spotlight's shadow
+  useEffect(() => {
+    sculptureRef.current?.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+  }, []);
+
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
     const dist = Math.abs(position.current - index);
     const targetLit = smoothstep(0, 1, clamp01(1 - dist / 0.75));
     lit.current = THREE.MathUtils.damp(lit.current, targetLit, 6, dt);
-    explode.current = THREE.MathUtils.damp(
-      explode.current,
-      exploded ? 1 : 0,
-      5,
-      dt,
-    );
+    // Underdamped spring: parts overshoot slightly, then settle
+    const steps = Math.ceil(dt * 120);
+    const h = dt / steps;
+    for (let s = 0; s < steps; s++) {
+      explodeVel.current +=
+        (((exploded ? 1 : 0) - explode.current) * 70 - explodeVel.current * 10) * h;
+      explode.current += explodeVel.current * h;
+    }
 
     const l = lit.current;
-    if (spotRef.current) spotRef.current.intensity = 2 + l * 70;
+    if (spotRef.current) {
+      spotRef.current.intensity = 2 + l * 70;
+      // Only re-render shadow maps for pieces that are actually lit
+      spotRef.current.shadow.autoUpdate = l > 0.03;
+    }
     beam.uniforms.uIntensity.value = 0.12 + l * 0.88;
     pool.uniforms.uIntensity.value = 0.08 + l * 0.92;
 
@@ -126,7 +144,7 @@ const Exhibit = ({ index, position, tags, exploded, focused, reduced }: ExhibitP
   return (
     <group position={[index * GALLERY_SPACING, 0, 0]}>
       {/* Plinth */}
-      <mesh position={[0, FLOOR_Y + PLINTH_H / 2, 0]}>
+      <mesh position={[0, FLOOR_Y + PLINTH_H / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[1.2, PLINTH_H, 1.2]} />
         <meshStandardMaterial color="#1c1c1c" roughness={0.85} metalness={0} />
       </mesh>
@@ -143,6 +161,11 @@ const Exhibit = ({ index, position, tags, exploded, focused, reduced }: ExhibitP
         distance={14}
         decay={1.4}
         intensity={2}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.02}
+        shadow-radius={6}
       />
       <mesh geometry={beamGeo} material={beam} position={[0, BEAM_TOP, 0]} />
       <mesh
@@ -158,7 +181,6 @@ const Exhibit = ({ index, position, tags, exploded, focused, reduced }: ExhibitP
           lit={lit}
           explode={explode}
           tags={tags}
-          labels={focused}
           labelsVisible={focused && exploded}
           reduced={reduced}
         />
@@ -235,6 +257,7 @@ const GalleryScene = ({
       dpr={[1, 1.5]}
       frameloop={active ? "always" : "never"}
       gl={{ antialias: true, powerPreference: "high-performance" }}
+      shadows
     >
       <color attach="background" args={["#000000"]} />
       <fog attach="fog" args={["#000000", 8.5, 18]} />
@@ -246,6 +269,7 @@ const GalleryScene = ({
       <mesh
         position={[((items.length - 1) * GALLERY_SPACING) / 2, FLOOR_Y, 0]}
         rotation-x={-Math.PI / 2}
+        receiveShadow
       >
         <planeGeometry args={[items.length * GALLERY_SPACING + 30, 30]} />
         <meshStandardMaterial color="#0c0c0c" roughness={0.9} metalness={0} />
@@ -264,6 +288,7 @@ const GalleryScene = ({
       ))}
 
       <GalleryCamera progress={progress} position={position} count={items.length} />
+      <CinematicPost aoRadius={0.6} aoIntensity={2.5} bloom={0.45} bloomThreshold={0.92} />
     </Canvas>
   );
 };
