@@ -611,7 +611,7 @@ const MountainCanvas: React.FC<MountainSceneProps> = ({ scrollProgress }) => {
       {/* Lighting */}
       <ambientLight intensity={0.1} />
       <directionalLight position={[50, 100, 30]} intensity={0.8} color="#ffffff" />
-      <directionalLight position={[-30, 50, -20]} intensity={0.3} color="#4466aa" />
+      <directionalLight position={[-30, 50, -20]} intensity={0.3} color="#9a9a9a" />
       
       {/* Scene elements */}
       <MountainTerrain />

@@ -1,655 +1,203 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
+// @ts-ignore
+import { useLenis } from "lenis/react";
+import { galleryPosition, progressForIndex } from "./sceneTimeline";
+import { useInViewport, usePrefersReducedMotion } from "./sceneHooks";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const GalleryScene = dynamic(() => import("./GalleryScene"), { ssr: false });
 
 const industries = [
   {
     name: "Ecommerce",
-    number: "01",
     description:
       "Scalable platforms that handle millions of transactions with real-time inventory, dynamic pricing, and seamless checkout experiences.",
     tags: ["Payments", "Inventory", "Microservices"],
   },
   {
     name: "Cyber Security",
-    number: "02",
     description:
       "Zero-trust architectures and threat detection systems that protect critical infrastructure at scale.",
     tags: ["Zero Trust", "Threat Detection", "Compliance"],
   },
   {
     name: "Healthcare",
-    number: "03",
     description:
       "HIPAA-compliant systems for patient data management, telemedicine platforms, and clinical workflow automation.",
     tags: ["HIPAA", "EHR Systems", "Telemedicine"],
   },
   {
     name: "Hospitality",
-    number: "04",
     description:
       "Real-time booking engines, guest experience platforms, and operational systems that delight at every touchpoint.",
     tags: ["Booking Engines", "Guest Experience", "PMS"],
   },
   {
     name: "Generative AI",
-    number: "05",
     description:
       "ML pipelines, intelligent automation systems, and AI-driven products from prototype to production at scale.",
     tags: ["ML Pipelines", "NLP", "Computer Vision"],
   },
   {
     name: "Manufacturing",
-    number: "06",
     description:
       "IoT integration, supply chain optimization, and predictive maintenance systems for smart factories.",
     tags: ["IoT", "Supply Chain", "Predictive Maintenance"],
   },
 ];
 
-interface RowProps {
-  industry: (typeof industries)[0];
-  index: number;
-  isActive: boolean;
-  onEnter: () => void;
-  onLeave: () => void;
-}
-
-const IndustryRow = ({
-  industry,
-  index,
-  isActive,
-  onEnter,
-  onLeave,
-}: RowProps) => {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const descRef = useRef<HTMLDivElement>(null);
-  const tagsRef = useRef<HTMLDivElement>(null);
-  const [mouseX, setMouseX] = useState(50);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!rowRef.current) return;
-    const rect = rowRef.current.getBoundingClientRect();
-    setMouseX(((e.clientX - rect.left) / rect.width) * 100);
-  }, []);
-
-  useEffect(() => {
-    const desc = descRef.current;
-    const tags = tagsRef.current;
-    if (!desc || !tags) return;
-
-    if (isActive) {
-      gsap.to(desc, {
-        clipPath: "inset(0% 0% 0% 0%)",
-        opacity: 1,
-        duration: 0.35,
-        delay: 0.05,
-        ease: "power3.out",
-      });
-      gsap.to(tags, {
-        clipPath: "inset(0% 0% 0% 0%)",
-        opacity: 1,
-        duration: 0.3,
-        delay: 0.12,
-        ease: "power3.out",
-      });
-    } else {
-      gsap.to(desc, {
-        clipPath: "inset(0% 100% 0% 0%)",
-        opacity: 0,
-        duration: 0.2,
-        ease: "power2.inOut",
-      });
-      gsap.to(tags, {
-        clipPath: "inset(0% 100% 0% 0%)",
-        opacity: 0,
-        duration: 0.18,
-        ease: "power2.inOut",
-      });
-    }
-  }, [isActive]);
-
-  const accentStyles = {
-    "--mouse-x": `${mouseX}%`,
-  } as React.CSSProperties;
-
-  return (
-    <div
-      ref={rowRef}
-      className={`ind-row interactive ${isActive ? "is-active" : ""}`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      onMouseMove={handleMouseMove}
-      data-index={index}
-      style={accentStyles}
-    >
-      {/* Cursor-following light pool — accent colored */}
-      <div className="ind-row-light" />
-
-      {/* Rule line glow — accent colored */}
-      <div className="ind-row-rule-glow" />
-
-      {/* Active indicator dot */}
-      <div className="ind-row-indicator" />
-
-      {/* Ghost number */}
-      <div className="ind-row-ghost" aria-hidden="true">
-        {industry.number}
-      </div>
-
-      {/* Main row content */}
-      <div className="ind-row-content">
-        <div className="ind-row-head">
-          <span className="ind-row-number">{industry.number}</span>
-          <h3 className="ind-row-name">
-            {industry.name.split("").map((char, i) => (
-              <span
-                key={i}
-                className="ind-char"
-                style={{ transitionDelay: `${i * 0.015}s` }}
-              >
-                {char === " " ? "\u00A0" : char}
-              </span>
-            ))}
-          </h3>
-          <div className="ind-row-arrow">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-            >
-              <path d="M7 17L17 7M17 7H9M17 7V15" />
-            </svg>
-          </div>
-        </div>
-
-        {/* Description — clip-path reveal */}
-        <div ref={descRef} className="ind-row-desc-wrap">
-          <p className="ind-row-desc">{industry.description}</p>
-        </div>
-
-        {/* Tags — clip-path reveal */}
-        <div ref={tagsRef} className="ind-row-tags-wrap">
-          <div className="ind-row-tags">
-            {industry.tags.map((tag, i) => (
-              <span key={i} className="ind-row-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom rule line */}
-      <div className="ind-row-rule" />
-
-      <style jsx>{`
-        .ind-row {
-          position: relative;
-          cursor: pointer;
-          overflow: hidden;
-        }
-
-        /* ── Cursor-following light pool — accent colored ── */
-        .ind-row-light {
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            600px ellipse at var(--mouse-x) 50%,
-            rgba(255, 255, 255, 0.04),
-            transparent 60%
-          );
-          opacity: 0;
-          pointer-events: none;
-          z-index: 0;
-          transition: opacity 0.3s ease;
-        }
-
-        .is-active .ind-row-light {
-          opacity: 1;
-        }
-
-        /* ── Rule line glow ── */
-        .ind-row-rule-glow {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 1px;
-          background: radial-gradient(
-            300px ellipse at var(--mouse-x) 50%,
-            rgba(255, 255, 255, 0.4),
-            transparent 70%
-          );
-          opacity: 0;
-          pointer-events: none;
-          z-index: 5;
-          transition: opacity 0.2s ease;
-        }
-
-        .is-active .ind-row-rule-glow {
-          opacity: 1;
-        }
-
-        /* ── Active indicator dot ── */
-        .ind-row-indicator {
-          position: absolute;
-          left: -1.5rem;
-          top: 50%;
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-50%) scale(0);
-          pointer-events: none;
-          z-index: 5;
-          transition:
-            transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-            background 0.3s ease,
-            box-shadow 0.3s ease;
-        }
-
-        .is-active .ind-row-indicator {
-          transform: translateY(-50%) scale(1);
-          background: rgba(255, 255, 255, 0.7);
-          box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
-        }
-
-        /* ── Ghost number ── */
-        .ind-row-ghost {
-          position: absolute;
-          right: -2%;
-          top: 50%;
-          transform: translateY(-50%);
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(8rem, 18vw, 16rem);
-          font-weight: 300;
-          line-height: 1;
-          color: rgba(255, 255, 255, 0);
-          pointer-events: none;
-          user-select: none;
-          z-index: 0;
-          transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          letter-spacing: -0.05em;
-        }
-
-        .is-active .ind-row-ghost {
-          color: rgba(255, 255, 255, 0.03);
-        }
-
-        /* ── Content ── */
-        .ind-row-content {
-          position: relative;
-          z-index: 2;
-          padding: 2.75rem 0;
-        }
-
-        .ind-row-head {
-          display: flex;
-          align-items: baseline;
-          gap: 2.5rem;
-        }
-
-        .ind-row-number {
-          font-family: var(--font-mono);
-          font-size: 0.7rem;
-          letter-spacing: 0.15em;
-          color: rgba(255, 255, 255, 0.2);
-          min-width: 2.5rem;
-          transition: color 0.25s ease;
-          padding-top: 0.3rem;
-        }
-
-        .is-active .ind-row-number {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
-        .ind-row-name {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(2.5rem, 6vw, 5.5rem);
-          font-weight: 300;
-          color: rgba(255, 255, 255, 0.4);
-          margin: 0;
-          flex: 1;
-          line-height: 1.1;
-          letter-spacing: -0.02em;
-          transition: text-shadow 0.3s ease;
-          display: flex;
-          flex-wrap: wrap;
-        }
-
-        .is-active .ind-row-name {
-          text-shadow:
-            0 0 60px rgba(255, 255, 255, 0.12),
-            0 0 120px rgba(255, 255, 255, 0.05);
-        }
-
-        /* ── Per-character color transition ── */
-        .ind-char {
-          display: inline-block;
-          color: rgba(255, 255, 255, 0.4);
-          transition:
-            color 0.2s ease,
-            transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .is-active .ind-char {
-          color: #fff;
-          transform: translateY(-1px);
-        }
-
-        .ind-row-arrow {
-          color: rgba(255, 255, 255, 0.08);
-          transform: translate(-8px, 8px) rotate(0deg);
-          transition:
-            color 0.25s ease,
-            transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-          flex-shrink: 0;
-          align-self: center;
-        }
-
-        .is-active .ind-row-arrow {
-          color: rgba(255, 255, 255, 0.4);
-          transform: translate(0, 0) rotate(0deg);
-        }
-
-        /* ── Description ── */
-        .ind-row-desc-wrap {
-          clip-path: inset(0% 100% 0% 0%);
-          opacity: 0;
-          overflow: hidden;
-        }
-
-        .ind-row-desc {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(1rem, 1.4vw, 1.2rem);
-          font-style: italic;
-          line-height: 1.7;
-          color: rgba(255, 255, 255, 0.4);
-          margin: 0;
-          padding: 1.25rem 0 0 5rem;
-          max-width: 600px;
-        }
-
-        /* ── Tags — accent colored on active ── */
-        .ind-row-tags-wrap {
-          clip-path: inset(0% 100% 0% 0%);
-          opacity: 0;
-          overflow: hidden;
-        }
-
-        .ind-row-tags {
-          display: flex;
-          gap: 0.75rem;
-          padding: 1.25rem 0 0.5rem 5rem;
-          flex-wrap: wrap;
-        }
-
-        .ind-row-tag {
-          font-family: var(--font-mono);
-          font-size: 0.6rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-top-color: rgba(255, 255, 255, 0.18);
-          border-bottom-color: rgba(255, 255, 255, 0.04);
-          padding: 0.35rem 0.85rem;
-          border-radius: 100px;
-          background: linear-gradient(
-            165deg,
-            rgba(255, 255, 255, 0.06) 0%,
-            rgba(255, 255, 255, 0.02) 50%,
-            rgba(255, 255, 255, 0) 100%
-          );
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          transition:
-            border-color 0.3s ease,
-            color 0.3s ease,
-            box-shadow 0.3s ease,
-            background 0.3s ease;
-        }
-
-        .is-active .ind-row-tag {
-          border-color: rgba(255, 255, 255, 0.25);
-          border-top-color: rgba(255, 255, 255, 0.4);
-          border-bottom-color: rgba(255, 255, 255, 0.08);
-          color: rgba(255, 255, 255, 0.7);
-          background: linear-gradient(
-            165deg,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.04) 50%,
-            rgba(255, 255, 255, 0.01) 100%
-          );
-          box-shadow:
-            0 0 12px rgba(255, 255, 255, 0.06),
-            0 1px 2px rgba(255, 255, 255, 0.04),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        /* ── Rule line ── */
-        .ind-row-rule {
-          height: 1px;
-          background: rgba(255, 255, 255, 0.06);
-          transform-origin: left center;
-        }
-
-        @media (max-width: 768px) {
-          .ind-row-content {
-            padding: 2rem 0;
-          }
-
-          .ind-row-head {
-            gap: 1.25rem;
-          }
-
-          .ind-row-desc {
-            padding-left: 3.75rem;
-          }
-
-          .ind-row-tags {
-            padding-left: 3.75rem;
-          }
-
-          .ind-row-ghost {
-            font-size: 6rem;
-            right: -5%;
-          }
-
-          .ind-row-indicator {
-            left: -0.75rem;
-            width: 4px;
-            height: 4px;
-          }
-        }
-      `}</style>
-    </div>
-  );
-};
+const COUNT = industries.length;
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const Industries = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<ScrollTrigger | null>(null);
+  const progress = useRef(0);
+  const focusedRef = useRef(0);
+  const [focused, setFocused] = useState(0);
+  const [exploded, setExploded] = useState(false);
 
-  // Intersection observer for entrance
+  const inView = useInViewport(sectionRef);
+  const reduced = usePrefersReducedMotion();
+  const lenis = useLenis();
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.08 },
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Entrance animations — cinematic sequence
-  useEffect(() => {
-    if (!isVisible || !containerRef.current) return;
+    if (!sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      // 1. Label slides in
-      gsap.fromTo(
-        ".ind-label",
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" },
-      );
-
-      // 2. Title lines reveal with clip-path
-      const titleLines = gsap.utils.toArray<HTMLElement>(".ind-title-line");
-      titleLines.forEach((line, i) => {
-        gsap.fromTo(
-          line,
-          { clipPath: "inset(100% 0% 0% 0%)", opacity: 0 },
-          {
-            clipPath: "inset(0% 0% 0% 0%)",
-            opacity: 1,
-            duration: 0.6,
-            delay: 0.1 + i * 0.12,
-            ease: "power3.out",
-          },
-        );
-      });
-
-      // 3. Rule lines draw in — staggered
-      const rules = gsap.utils.toArray<HTMLElement>(".ind-row-rule");
-      rules.forEach((rule, i) => {
-        gsap.fromTo(
-          rule,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            duration: 0.7,
-            delay: 0.25 + i * 0.06,
-            ease: "power3.inOut",
-          },
-        );
-      });
-
-      // 4. Rows fade up — more staggered for cinematic feel
-      const rows = gsap.utils.toArray<HTMLElement>(".ind-row");
-      rows.forEach((row, i) => {
-        gsap.fromTo(
-          row.querySelector(".ind-row-content"),
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            delay: 0.3 + i * 0.1,
-            ease: "power3.out",
-          },
-        );
-      });
-
-      // 5. Counter
-      gsap.fromTo(
-        ".ind-counter",
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, delay: 0.8, ease: "power2.out" },
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, [isVisible]);
-
-  // Scroll-driven parallax
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const ctx = gsap.context(() => {
-      // Title parallax
-      gsap.to(".ind-title", {
-        y: -50,
-        ease: "none",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1.5,
+      // Pinned stage: vertical scroll trucks the camera along the gallery
+      triggerRef.current = ScrollTrigger.create({
+        trigger: stageRef.current,
+        start: "top top",
+        end: `+=${(COUNT - 1) * 90 + 60}%`,
+        pin: true,
+        onUpdate: (self) => {
+          progress.current = self.progress;
+          const idx = Math.round(galleryPosition(self.progress, COUNT));
+          if (idx !== focusedRef.current) {
+            focusedRef.current = idx;
+            setFocused(idx);
+          }
         },
       });
 
-      // Ghost numbers parallax — each drifts independently
-      const ghosts = gsap.utils.toArray<HTMLElement>(".ind-row-ghost");
-      ghosts.forEach((ghost, i) => {
-        gsap.to(ghost, {
-          y: -30 - i * 8,
-          ease: "none",
+      gsap.fromTo(
+        ".gal-chrome",
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 0.8,
+          ease: "power2.out",
           scrollTrigger: {
-            trigger: ghost.parentElement,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 2,
+            trigger: sectionRef.current,
+            start: "top 70%",
+            toggleActions: "play none none reverse",
           },
-        });
-      });
-    }, containerRef);
+        },
+      );
+    }, sectionRef);
 
     return () => ctx.revert();
   }, []);
 
+  // Moving on to another piece puts the previous one back together
+  useEffect(() => {
+    setExploded(false);
+  }, [focused]);
+
+  const goTo = useCallback(
+    (i: number) => {
+      const st = triggerRef.current;
+      if (!st) return;
+      const y = st.start + progressForIndex(i, COUNT) * (st.end - st.start);
+      if (lenis) lenis.scrollTo(y, { duration: 1.2 });
+      else window.scrollTo({ top: y, behavior: "smooth" });
+    },
+    [lenis],
+  );
+
+  const toggle = useCallback(() => setExploded((e) => !e), []);
+
+  const current = industries[focused];
+
   return (
-    <section ref={containerRef} id="industries" className="ind-section">
-      <div className="ind-container">
-        {/* Header */}
-        <div className="ind-header">
-          <div className="ind-label">
-            <span className="ind-label-index">02</span>
-            <span className="ind-label-line" />
-            <span className="ind-label-text">Industries</span>
+    <section ref={sectionRef} id="industries" className="ind-section">
+      {/* Full text for screen readers and search engines */}
+      <div className="sr-only">
+        <h2>Industries</h2>
+        <p>From startups to enterprise, I architect solutions that scale.</p>
+        <ul>
+          {industries.map((ind) => (
+            <li key={ind.name}>
+              <h3>{ind.name}</h3>
+              <p>{ind.description}</p>
+              <p>{ind.tags.join(", ")}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div ref={stageRef} className="gal-stage">
+        <div className="gal-canvas" onClick={toggle} aria-hidden="true">
+          <GalleryScene
+            progress={progress}
+            active={inView}
+            reduced={reduced}
+            focusedIndex={focused}
+            exploded={exploded}
+            items={industries}
+          />
+        </div>
+
+        <div className="gal-chrome">
+          <div className="gal-label" aria-hidden="true">
+            <span className="gal-label-index">02</span>
+            <span className="gal-label-line" />
+            <span className="gal-label-text">Industries</span>
           </div>
 
-          <h2 className="ind-title">
-            <span className="ind-title-line">
-              From startups to enterprise,
+          <div className="gal-caption">
+            <span className="gal-index" aria-hidden="true">
+              {pad2(focused + 1)} / {pad2(COUNT)}
             </span>
-            <span className="ind-title-line">
-              I architect solutions{" "}
-              <em className="ind-title-accent">that scale.</em>
+            <span key={focused} className="gal-name" aria-live="polite">
+              {current.name}
             </span>
-          </h2>
-        </div>
+            <button
+              type="button"
+              className="gal-hint interactive"
+              onClick={toggle}
+              aria-pressed={exploded}
+            >
+              <span className="hint-fine">
+                {exploded ? "Click to reassemble" : "Click to take apart"}
+              </span>
+              <span className="hint-coarse">
+                {exploded ? "Tap to reassemble" : "Tap to take apart"}
+              </span>
+            </button>
+          </div>
 
-        {/* First rule line */}
-        <div className="ind-row-rule ind-rule-first" />
-
-        {/* Industry Rows */}
-        <div className="ind-list">
-          {industries.map((industry, index) => (
-            <IndustryRow
-              key={index}
-              industry={industry}
-              index={index}
-              isActive={activeIndex === index}
-              onEnter={() => setActiveIndex(index)}
-              onLeave={() => setActiveIndex(null)}
-            />
-          ))}
-        </div>
-
-        {/* Counter */}
-        <div className="ind-counter">
-          <span className="ind-counter-label">Domains of expertise</span>
-          <span className="ind-counter-value">
-            {activeIndex !== null
-              ? `${String(activeIndex + 1).padStart(2, "0")} / ${String(industries.length).padStart(2, "0")}`
-              : String(industries.length).padStart(2, "0")}
-          </span>
+          <div className="gal-pips" role="tablist" aria-label="Industries">
+            {industries.map((ind, i) => (
+              <button
+                key={ind.name}
+                type="button"
+                role="tab"
+                aria-selected={i === focused}
+                aria-label={ind.name}
+                className={`gal-pip interactive${i === focused ? " is-active" : ""}`}
+                onClick={() => goTo(i)}
+              >
+                <span className="gal-pip-dot" />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -658,46 +206,52 @@ const Industries = () => {
           position: relative;
           z-index: 1;
           background: #000;
-          overflow: hidden;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
         }
 
-        .ind-container {
-          max-width: 1300px;
+        .gal-stage {
+          position: relative;
+          height: 100vh;
           width: 100%;
-          margin: 0 auto;
-          padding: 10rem 4rem 8rem;
+          overflow: hidden;
+          background: #000;
         }
 
-        /* ── Header ── */
-        .ind-header {
-          margin-bottom: 5rem;
+        .gal-canvas {
+          position: absolute;
+          inset: 0;
         }
 
-        .ind-label {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-          margin-bottom: 2.5rem;
+        .gal-chrome {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
           opacity: 0;
         }
 
-        .ind-label-index {
+        /* ── Label ── */
+        .gal-label {
+          position: absolute;
+          top: 3rem;
+          left: 4rem;
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
+        .gal-label-index {
           font-family: var(--font-mono);
           font-size: 0.7rem;
           color: #fff;
           letter-spacing: 0.1em;
         }
 
-        .ind-label-line {
+        .gal-label-line {
           width: 40px;
           height: 1px;
           background: rgba(255, 255, 255, 0.3);
         }
 
-        .ind-label-text {
+        .gal-label-text {
           font-family: var(--font-mono);
           font-size: 0.7rem;
           letter-spacing: 0.2em;
@@ -705,85 +259,162 @@ const Industries = () => {
           color: rgba(255, 255, 255, 0.5);
         }
 
-        /* ── Title ── */
-        .ind-title {
-          font-family: "Cormorant Garamond", var(--font-serif);
-          font-size: clamp(2.5rem, 5vw, 4rem);
-          font-weight: 300;
-          line-height: 1.3;
-          color: #fff;
-          margin: 0;
+        /* ── Caption: one small word per piece ── */
+        .gal-caption {
+          position: absolute;
+          left: 50%;
+          bottom: 5.5rem;
+          transform: translateX(-50%);
           display: flex;
           flex-direction: column;
-          will-change: transform;
+          align-items: center;
+          gap: 0.7rem;
+          text-align: center;
         }
 
-        .ind-title-line {
-          display: block;
-          clip-path: inset(100% 0% 0% 0%);
-          opacity: 0;
-          will-change: clip-path, opacity;
+        .gal-index {
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          letter-spacing: 0.25em;
+          color: rgba(255, 255, 255, 0.35);
         }
 
-        .ind-title-accent {
-          color: rgba(255, 255, 255, 0.4);
-          font-style: italic;
+        .gal-name {
+          font-family: "Cormorant Garamond", var(--font-serif);
+          font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+          font-weight: 300;
+          color: #fff;
+          line-height: 1;
+          white-space: nowrap;
+          animation: gal-name-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* ── List ── */
-        .ind-list {
-          margin-bottom: 3rem;
+        @keyframes gal-name-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+            filter: blur(6px);
+          }
+          to {
+            opacity: 1;
+            transform: none;
+            filter: blur(0);
+          }
         }
 
-        .ind-rule-first {
-          height: 1px;
-          background: rgba(255, 255, 255, 0.06);
-          transform-origin: left center;
-          margin-bottom: 0;
+        .gal-hint {
+          pointer-events: auto;
+          background: none;
+          border: none;
+          padding: 0.4rem 0.6rem;
+          font-family: var(--font-mono);
+          font-size: 0.58rem;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.3);
+          cursor: none;
+          transition: color 0.3s ease;
         }
 
-        /* ── Counter ── */
-        .ind-counter {
+        .gal-hint:hover,
+        .gal-hint:focus-visible {
+          color: rgba(255, 255, 255, 0.75);
+        }
+
+        .hint-coarse {
+          display: none;
+        }
+
+        @media (pointer: coarse) {
+          .hint-fine {
+            display: none;
+          }
+          .hint-coarse {
+            display: inline;
+          }
+        }
+
+        /* ── Pips ── */
+        .gal-pips {
+          position: absolute;
+          left: 50%;
+          bottom: 2.5rem;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 0.4rem;
+          pointer-events: auto;
+        }
+
+        .gal-pip {
+          width: 22px;
+          height: 22px;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          opacity: 0;
-          padding-top: 2rem;
+          justify-content: center;
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: none;
         }
 
-        .ind-counter-label {
+        .gal-pip-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.25);
+          transition:
+            transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+            background 0.3s ease;
+        }
+
+        .gal-pip:hover .gal-pip-dot {
+          background: rgba(255, 255, 255, 0.6);
+        }
+
+        .gal-pip.is-active .gal-pip-dot {
+          background: #fff;
+          transform: scale(1.6);
+        }
+
+        /* ── Part labels (rendered by drei <Html> inside the canvas) ── */
+        .gal-tag {
+          display: inline-block;
           font-family: var(--font-mono);
-          font-size: 0.65rem;
-          letter-spacing: 0.15em;
+          font-size: 0.58rem;
+          letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.2);
+          white-space: nowrap;
+          color: rgba(255, 255, 255, 0.85);
+          padding: 0.35rem 0.8rem;
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          border-radius: 100px;
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          opacity: 0;
+          transform: translateY(6px);
+          transition:
+            opacity 0.35s ease,
+            transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .ind-counter-value {
-          font-family: var(--font-mono);
-          font-size: 0.85rem;
-          letter-spacing: 0.1em;
-          color: rgba(255, 255, 255, 0.4);
-          transition: all 0.3s ease;
-        }
-
-        @media (max-width: 1024px) {
-          .ind-container {
-            padding: 7rem 2.5rem 6rem;
-          }
+        .gal-tag.is-visible {
+          opacity: 1;
+          transform: none;
+          transition-delay: 0.25s;
         }
 
         @media (max-width: 768px) {
-          .ind-container {
-            padding: 5rem 1.5rem 4rem;
+          .gal-label {
+            top: 2rem;
+            left: 1.5rem;
           }
-
-          .ind-header {
-            margin-bottom: 3rem;
+          .gal-caption {
+            bottom: 5rem;
           }
-
-          .ind-label {
-            margin-bottom: 1.5rem;
+          .gal-tag {
+            font-size: 0.5rem;
+            padding: 0.3rem 0.6rem;
           }
         }
       `}</style>
